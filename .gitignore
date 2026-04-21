@@ -27,7 +27,6 @@ dist-ssr
 .env
 .env.*
 !.env.example
-.lib
 
 # Vercel deployment
 .vercel/
