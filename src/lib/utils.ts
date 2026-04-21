@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 const twMerge = extendTailwindMerge({
   extend: {
     theme: {
-      colors: [],
+      color: [],
     },
   },
 })
