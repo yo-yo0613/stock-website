@@ -1,0 +1,22 @@
+# Stock Search Dashboard Walkthrough
+
+The development of the Bento Grid-based stock market dashboard is complete. It employs a modern tech stack centered on **React**, **Tailwind CSS**, and **Framer Motion**, delivering an immediate sense of premium aesthetic.
+
+## Architecture and Components
+
+- **[App.tsx](file:///c:/Users/14L1/Desktop/Bento-grid/src/App.tsx)**: The main layout structure containing a sidebar navigation and the primary grid area.
+- **[BentoGrid.tsx](file:///c:/Users/14L1/Desktop/Bento-grid/src/components/BentoGrid.tsx)**: Reusable grid components utilizing Tailwind CSS Grid layout utilities and Framer Motion effects. Highlights hovered items with dynamic border changes.
+- **StockChart.tsx / Watchlist.tsx / SearchWidget.tsx**: Handcrafted components that fulfill the specific goal of a typical quantitative trading platform. Recharts was integrated natively to create a beautiful data visualization area.
+
+## Key Technical Details
+
+- **Tailwind configuration in [tailwind.config.js](file:///c:/Users/14L1/Desktop/Bento-grid/tailwind.config.js)** injects unified color tokens (`background`, `card`, `success`, `danger`), setting up a dark mode system specifically.
+- Framer Motion provides lightweight interaction behaviors on the grid elements.
+- Uses `class-variance-authority` pattern manually to concatenate classes gracefully with `tailwind-merge`.
+
+## Result
+
+Your dashboard is currently running on the Vite development server (usually available at `http://localhost:5173`). Have a look to test all layout spans!
+
+> [!TIP]
+> The UI includes various micro-interactions. Try clicking inputs, hovering over the stock cards on the Watchlist, and interacting with the primary chart context to evaluate the UX flow.
