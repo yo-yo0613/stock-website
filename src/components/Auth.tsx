@@ -64,6 +64,16 @@ export const AuthScreen = () => {
             {isSignUp ? 'Create Account' : 'Welcome Back'}
           </h2>
 
+          {import.meta.env.VITE_SUPABASE_ANON_KEY === undefined && (
+            <div className="bg-orange-500/10 border border-orange-500/50 text-orange-400 p-4 rounded-xl text-sm flex items-start gap-2 mb-6">
+              <AlertCircle size={18} className="shrink-0 mt-0.5" />
+              <div>
+                <strong className="block mb-1">Missing Environment Variables!</strong>
+                Please add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to your Vercel project settings and Redeploy.
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleAuth} className="space-y-4">
             {error && (
               <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-3 rounded-xl text-sm flex items-start gap-2">
