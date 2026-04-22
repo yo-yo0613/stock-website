@@ -17,11 +17,11 @@ export const MarketsView = ({ onNavigate }: { onNavigate?: (symbol: string) => v
     { name: "Ethereum", symbol: "ETH-USD", change: "+1.80%" },
     { name: "Solana", symbol: "SOL-USD", change: "-0.50%" },
   ];
-  const forex = [
-    { name: "EUR/USD", symbol: "EURUSD=X", change: "+0.15%" },
-    { name: "GBP/USD", symbol: "GBPUSD=X", change: "-0.22%" },
-    { name: "USD/JPY", symbol: "JPY=X", change: "+0.45%" },
-  ];
+  // const forex = [
+  //   { name: "EUR/USD", symbol: "EURUSD=X", change: "+0.15%" },
+  //   { name: "GBP/USD", symbol: "GBPUSD=X", change: "-0.22%" },
+  //   { name: "USD/JPY", symbol: "JPY=X", change: "+0.45%" },
+  // ];
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -30,25 +30,25 @@ export const MarketsView = ({ onNavigate }: { onNavigate?: (symbol: string) => v
     >
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="md:col-span-1 flex flex-col gap-6">
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 text-primary mb-4">
-            <LineChart />
-            <h2 className="text-xl font-bold text-white">Global Markets</h2>
+          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center gap-3 text-primary mb-4">
+              <LineChart />
+              <h2 className="text-xl font-bold text-white">Global Markets</h2>
+            </div>
+            <p className="text-neutral-400 text-sm mb-4">Real-time status of major indices across the globe.</p>
+            <div className="space-y-4">
+              {indices.map((idx) => (
+                <div
+                  key={idx.name}
+                  onClick={() => onNavigate && onNavigate(idx.symbol)}
+                  className="flex justify-between items-center border-b border-border/50 pb-2 cursor-pointer hover:bg-[#1a1a24] p-2 rounded transition-colors group"
+                >
+                  <span className="text-white font-medium group-hover:text-primary transition-colors">{idx.name}</span>
+                  <span className="text-success text-sm font-bold">{idx.change}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <p className="text-neutral-400 text-sm mb-4">Real-time status of major indices across the globe.</p>
-          <div className="space-y-4">
-            {indices.map((idx) => (
-              <div
-                key={idx.name}
-                onClick={() => onNavigate && onNavigate(idx.symbol)}
-                className="flex justify-between items-center border-b border-border/50 pb-2 cursor-pointer hover:bg-[#1a1a24] p-2 rounded transition-colors group"
-              >
-                <span className="text-white font-medium group-hover:text-primary transition-colors">{idx.name}</span>
-                <span className="text-success text-sm font-bold">{idx.change}</span>
-              </div>
-            ))}
-          </div>
-        </div>
 
           <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
             <div className="flex items-center gap-3 text-warning mb-4">

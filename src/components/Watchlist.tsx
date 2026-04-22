@@ -22,9 +22,9 @@ const listVariants: Variants = {
 
 const itemVariants: Variants = {
   hidden: { opacity: 0, x: -20 },
-  visible: { 
-    opacity: 1, x: 0, 
-    transition: { type: "tween", duration: 0.3, ease: "easeOut" } 
+  visible: {
+    opacity: 1, x: 0,
+    transition: { type: "tween", duration: 0.3, ease: "easeOut" }
   },
 };
 
@@ -39,13 +39,13 @@ export const Watchlist = ({ onNavigate }: { onNavigate?: (symbol: string) => voi
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const promises = watchlist.map(symbol => 
+        const promises = watchlist.map(symbol =>
           fetch(`/api/finance/v8/finance/chart/${symbol}?interval=1d&range=1d`).then(r => r.json()).catch(() => null)
         );
         const results = await Promise.all(promises);
-        
-        const formattedData = results.map((json, i) => {
-          const sym = watchlist[i];
+
+        const formattedData = results.map((json) => {
+          //const sym = watchlist[i];
           if (json && json.chart && json.chart.result && json.chart.result[0]) {
             const meta = json.chart.result[0].meta;
             if (!meta) return null;
@@ -62,7 +62,7 @@ export const Watchlist = ({ onNavigate }: { onNavigate?: (symbol: string) => voi
           }
           return null;
         }).filter(item => item !== null) as StockData[];
-        
+
         setData(formattedData);
       } catch (error) {
         console.error("Error fetching Yahoo finance data:", error);
@@ -100,9 +100,9 @@ export const Watchlist = ({ onNavigate }: { onNavigate?: (symbol: string) => voi
       <form onSubmit={handleAdd} className="mb-4 flex items-center gap-2 relative z-10">
         <div className="relative flex-1">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
-          <input 
-            type="text" 
-            placeholder="Add symbol (e.g. AMZN)" 
+          <input
+            type="text"
+            placeholder="Add symbol (e.g. AMZN)"
             value={newSymbol}
             onChange={(e) => setNewSymbol(e.target.value.toUpperCase())}
             className="w-full bg-[#1a1a24] border border-border text-white text-sm rounded-lg py-2.5 pl-9 pr-3 outline-none focus:border-primary/50 transition-colors"
@@ -119,7 +119,7 @@ export const Watchlist = ({ onNavigate }: { onNavigate?: (symbol: string) => voi
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
         ) : (
-          <motion.div 
+          <motion.div
             variants={listVariants}
             initial="hidden"
             animate="visible"
@@ -149,7 +149,7 @@ export const Watchlist = ({ onNavigate }: { onNavigate?: (symbol: string) => voi
                   </span>
                 </div>
 
-                <button 
+                <button
                   onClick={(e) => handleRemove(e, item.symbol)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1.5 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-md transition-all"
                 >

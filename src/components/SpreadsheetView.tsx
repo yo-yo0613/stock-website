@@ -21,7 +21,7 @@ export const SpreadsheetView = () => {
       const wsname = wb.SheetNames[0];
       const ws = wb.Sheets[wsname];
       const rawData = xlsx.utils.sheet_to_json(ws, { header: 1 }) as any[][];
-      
+
       if (rawData.length > 0) {
         setCols(rawData[0].map((_, i) => ({ key: String(i), name: String.fromCharCode(65 + i) })));
         setData(rawData);
@@ -95,7 +95,7 @@ export const SpreadsheetView = () => {
             <thead className="bg-[#1a1a24] sticky top-0 z-10">
               <tr>
                 <th className="px-4 py-2 border-r border-b border-border w-12 text-center text-neutral-500 font-normal"></th>
-                {cols.map((col, i) => (
+                {cols.map((col) => (
                   <th key={col.key} className="px-4 py-2 border-r border-b border-border text-center font-bold text-neutral-300 min-w-[120px]">
                     {col.name}
                   </th>
@@ -123,12 +123,12 @@ export const SpreadsheetView = () => {
               {/* Add empty rows for better UX */}
               {Array.from({ length: Math.max(0, 50 - data.length) }).map((_, i) => (
                 <tr key={`empty-${i}`}>
-                   <td className="px-2 py-1 border-r border-border text-center text-neutral-500 bg-[#1a1a24] font-medium sticky left-0">
+                  <td className="px-2 py-1 border-r border-border text-center text-neutral-500 bg-[#1a1a24] font-medium sticky left-0">
                     {data.length + i + 1}
                   </td>
                   {cols.map((_, colIndex) => (
                     <td key={colIndex} className="p-0 border-r border-border relative group">
-                       <input
+                      <input
                         type="text"
                         className="w-full h-full bg-transparent px-3 py-2 text-sm text-neutral-300 outline-none focus:bg-primary/10 focus:ring-1 focus:ring-inset focus:ring-primary transition-colors"
                       />
