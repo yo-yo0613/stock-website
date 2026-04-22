@@ -6,9 +6,14 @@ import { Watchlist } from "./components/Watchlist";
 import { SearchWidget } from "./components/SearchWidget";
 import { PortfolioStats } from "./components/PortfolioStats";
 import { MarketsView, AlertsView, SettingsView, ProfileView, AnalysisView, NewsView } from "./components/Views";
-import { LineChart, LayoutDashboard, Settings, Bell, User, TrendingUp, Newspaper, Share, X } from "lucide-react";
+import { SpreadsheetView } from "./components/SpreadsheetView";
+import { LineChart, LayoutDashboard, Settings, Bell, User, TrendingUp, Newspaper, Share, X, LogOut, Database } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { useUser } from "./context/UserContext";
+import { AuthScreen } from "./components/Auth";
+
 function App() {
+  const { session, loading, signOut } = useUser();
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [selectedSymbol, setSelectedSymbol] = useState("AAPL");
   const [showQRModal, setShowQRModal] = useState(false);
@@ -17,6 +22,14 @@ function App() {
     setSelectedSymbol(sym);
     setActiveTab("Analysis");
   };
+
+  if (loading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center text-white"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
+  }
+
+  if (!session) {
+    return <AuthScreen />;
+  }
 
   const dashboardItems = [
     {
@@ -58,6 +71,7 @@ function App() {
           {[
             { icon: <LayoutDashboard size={20} />, label: "Dashboard" },
             { icon: <TrendingUp size={20} />, label: "Analysis" },
+            { icon: <Database size={20} />, label: "Data Studio" },
             { icon: <LineChart size={20} />, label: "Markets" },
             { icon: <Newspaper size={20} />, label: "News" },
             { icon: <Bell size={20} />, label: "Alerts" },
@@ -121,6 +135,14 @@ function App() {
               </div>
             );
           })}
+          
+          <div
+            onClick={signOut}
+            className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors text-red-500 hover:bg-red-500/10"
+          >
+            <LogOut size={20} />
+            <span className="font-medium hidden md:block">Sign Out</span>
+          </div>
         </div>
       </nav>
 
@@ -142,6 +164,7 @@ function App() {
             <p className="text-neutral-400 mt-1">
               {activeTab === "Dashboard" && "Welcome back. Here's what's happening today."}
               {activeTab === "Analysis" && `Detailed analysis and technicals for ${selectedSymbol}.`}
+              {activeTab === "Data Studio" && "Upload and analyze your custom spreadsheets locally."}
               {activeTab === "Markets" && "Global market performance."}
               {activeTab === "News" && "Live financial news and market updates."}
               {activeTab === "Alerts" && "Your latest notifications."}
@@ -166,7 +189,7 @@ function App() {
         )}
 
         {activeTab === "Analysis" && <AnalysisView symbol={selectedSymbol} />}
-
+        {activeTab === "Data Studio" && <SpreadsheetView />}
         {activeTab === "Markets" && <MarketsView onNavigate={handleNavigateAnalysis} />}
         {activeTab === "News" && <NewsView />}
         {activeTab === "Alerts" && <AlertsView />}
@@ -178,10 +201,10 @@ function App() {
       <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-[#0a0a0f]/95 backdrop-blur-md border-t border-border flex justify-around items-center p-2 z-50 pb-safe">
         {[
           { icon: <LayoutDashboard size={22} />, label: "Dashboard" },
+          { icon: <Database size={22} />, label: "Data Studio" },
           { icon: <LineChart size={22} />, label: "Markets" },
           { icon: <Newspaper size={22} />, label: "News" },
-          { icon: <User size={22} />, label: "Profile" },
-          { icon: <Settings size={22} />, label: "Settings" }
+          { icon: <User size={22} />, label: "Profile" }
         ].map((item, i) => {
           const active = activeTab === item.label;
           return (

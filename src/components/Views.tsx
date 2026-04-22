@@ -12,13 +12,24 @@ export const MarketsView = ({ onNavigate }: { onNavigate?: (symbol: string) => v
     { name: "DOW JONES", symbol: "DIA", change: "+0.85%" },
     { name: "FTSE 100", symbol: "TVC:UKX", change: "+0.34%" }
   ];
+  const crypto = [
+    { name: "Bitcoin", symbol: "BTC-USD", change: "+2.45%" },
+    { name: "Ethereum", symbol: "ETH-USD", change: "+1.80%" },
+    { name: "Solana", symbol: "SOL-USD", change: "-0.50%" },
+  ];
+  const forex = [
+    { name: "EUR/USD", symbol: "EURUSD=X", change: "+0.15%" },
+    { name: "GBP/USD", symbol: "GBPUSD=X", change: "-0.22%" },
+    { name: "USD/JPY", symbol: "JPY=X", change: "+0.45%" },
+  ];
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className="w-full flex flex-col gap-6"
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="md:col-span-1 flex flex-col gap-6">
         <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-3 text-primary mb-4">
             <LineChart />
@@ -39,7 +50,26 @@ export const MarketsView = ({ onNavigate }: { onNavigate?: (symbol: string) => v
           </div>
         </div>
 
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm md:col-span-2">
+          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center gap-3 text-warning mb-4">
+              <h2 className="text-xl font-bold text-white">Crypto Markets</h2>
+            </div>
+            <div className="space-y-4">
+              {crypto.map((idx) => (
+                <div
+                  key={idx.name}
+                  onClick={() => onNavigate && onNavigate(idx.symbol)}
+                  className="flex justify-between items-center border-b border-border/50 pb-2 cursor-pointer hover:bg-[#1a1a24] p-2 rounded transition-colors group"
+                >
+                  <span className="text-white font-medium group-hover:text-warning transition-colors">{idx.name}</span>
+                  <span className={`text-sm font-bold ${idx.change.startsWith('-') ? 'text-danger' : 'text-success'}`}>{idx.change}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm md:col-span-3">
           <div className="flex items-center gap-3 text-success mb-4">
             <BarChart2 />
             <h2 className="text-xl font-bold text-white">Market Sentiment Data</h2>

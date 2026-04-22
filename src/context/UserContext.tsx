@@ -10,6 +10,12 @@ export interface UserProfile {
   bank: string;
   wallet: string;
   avatarUrl?: string; // Stored as base64 data URI
+  stats: {
+    balance: number;
+    profit: number;
+    positions: number;
+  };
+  watchlist: string[];
 }
 
 export interface UserSettings {
@@ -33,9 +39,12 @@ export interface UserSettings {
 export interface UserContextType {
   profile: UserProfile;
   settings: UserSettings;
-  updateProfile: (data: Partial<UserProfile>) => void;
-  updateSettings: (data: Partial<UserSettings>) => void;
+  session: any;
+  loading: boolean;
+  updateProfile: (data: Partial<UserProfile>) => Promise<void>;
+  updateSettings: (data: Partial<UserSettings>) => Promise<void>;
   getCurrencySymbol: () => string;
+  signOut: () => Promise<void>;
 }
 
 const defaultProfile: UserProfile = {
@@ -43,7 +52,13 @@ const defaultProfile: UserProfile = {
   email: "alex@quanttrd.io",
   phone: "+1 (555) 123-4567",
   bank: "JPMorgan Chase",
-  wallet: "0x7a...9d8E"
+  wallet: "0x7a...9d8E",
+  stats: {
+    balance: 124562.00,
+    profit: 12.5,
+    positions: 14
+  },
+  watchlist: ["AAPL", "TSLA", "MSFT", "NVDA", "BTC-USD"]
 };
 
 const defaultSettings: UserSettings = {
@@ -56,39 +71,67 @@ const defaultSettings: UserSettings = {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
+import { supabase } from '../lib/supabase';
+
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<UserProfile>(defaultProfile);
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [session, setSession] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Load from local storage on mount
   useEffect(() => {
-    const savedProfile = localStorage.getItem('quanttrd_profile');
-    const savedSettings = localStorage.getItem('quanttrd_settings');
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      loadUserData(session);
+      setLoading(false);
+    });
 
-    if (savedProfile) {
-      try { setProfile(JSON.parse(savedProfile)); } catch (e) { }
-    }
-    if (savedSettings) {
-      try { setSettings(JSON.parse(savedSettings)); } catch (e) { }
-    }
-    setIsLoaded(true);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      loadUserData(session);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const updateProfile = (data: Partial<UserProfile>) => {
-    setProfile(prev => {
-      const newProfile = { ...prev, ...data };
-      localStorage.setItem('quanttrd_profile', JSON.stringify(newProfile));
-      return newProfile;
-    });
+  const loadUserData = (currentSession: any) => {
+    if (currentSession?.user?.user_metadata) {
+      const meta = currentSession.user.user_metadata;
+      if (meta.profile) setProfile(meta.profile);
+      if (meta.settings) setSettings(meta.settings);
+    } else {
+      // Fallback to local storage if not logged in just in case
+      const localProfile = localStorage.getItem('quanttrd_profile');
+      const localSettings = localStorage.getItem('quanttrd_settings');
+      if (localProfile) try { setProfile(JSON.parse(localProfile)); } catch(e){}
+      if (localSettings) try { setSettings(JSON.parse(localSettings)); } catch(e){}
+    }
   };
 
-  const updateSettings = (data: Partial<UserSettings>) => {
-    setSettings(prev => {
-      const newSettings = { ...prev, ...data };
-      localStorage.setItem('quanttrd_settings', JSON.stringify(newSettings));
-      return newSettings;
-    });
+  const syncToSupabase = async (newProfile: UserProfile, newSettings: UserSettings) => {
+    if (session?.user) {
+      await supabase.auth.updateUser({
+        data: { profile: newProfile, settings: newSettings }
+      });
+    }
+  };
+
+  const updateProfile = async (data: Partial<UserProfile>) => {
+    const newProfile = { ...profile, ...data };
+    setProfile(newProfile);
+    localStorage.setItem('quanttrd_profile', JSON.stringify(newProfile));
+    await syncToSupabase(newProfile, settings);
+  };
+
+  const updateSettings = async (data: Partial<UserSettings>) => {
+    const newSettings = { ...settings, ...data };
+    setSettings(newSettings);
+    localStorage.setItem('quanttrd_settings', JSON.stringify(newSettings));
+    await syncToSupabase(profile, newSettings);
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
   };
 
   const getCurrencySymbol = () => {
@@ -99,10 +142,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  if (!isLoaded) return null; // Prevent hydration mismatch
-
   return (
-    <UserContext.Provider value={{ profile, settings, updateProfile, updateSettings, getCurrencySymbol }}>
+    <UserContext.Provider value={{ profile, settings, session, loading, updateProfile, updateSettings, getCurrencySymbol, signOut }}>
       {children}
     </UserContext.Provider>
   );
