@@ -375,3 +375,31 @@ npm run dev
 這整個作品已經從一個切版作業，進化成了足以拿去跟全世界募資的完整商業級應用了。
 唯一的挑戰是：你能不能加上「加密貨幣支付」的按鈕？或者是把 Data Studio 的圖表直接用 Recharts 畫出來？
 天空才是你的極限，去創造吧！
+
+---
+
+## 🌟 最新進階：實作 Yahoo Finance 搜尋與優化 Watchlist 體驗
+
+在這個專案的最後，我們將原本只是靜態介面的「Find Opportunities」升級成了真正會動的搜尋引擎，並大幅優化了右側 Watchlist 的操作手感！
+
+### 1. 實作 Debounce 搜尋 (防抖動)
+在 `SearchWidget.tsx` 中，如果使用者每打一個字我們就發送一次 API 請求，很可能會瞬間被 Yahoo Finance 的伺服器拉黑（Rate Limit）。
+因此我們使用了 `setTimeout` 來實作「防抖動 (Debounce)」：
+```jsx
+  useEffect(() => {
+    const search = async () => {
+      // 串接 Yahoo Finance API...
+    };
+    
+    // 使用者停止輸入 500ms 後才發送請求
+    const timeoutId = setTimeout(search, 500);
+    return () => clearTimeout(timeoutId); // 如果使用者還在打字，就清除上一次的計時器
+  }, [query]);
+```
+
+### 2. 優化 Watchlist 的操作體驗 (樂觀 UI)
+原本的 Watchlist 在新增股票時，會「等待」 Supabase 更新完成後才清空輸入框，這會讓使用者覺得網站卡卡的。
+我們將邏輯改為「樂觀 UI (Optimistic UI)」：使用者一按下新增，**馬上清空輸入框**並給予成功的回饋，然後在背景偷偷進行 Supabase 的同步。
+同時，如果因為 API 限制而抓不到資料，我們也修改了判斷邏輯，明確顯示「Failed to load data. This might be due to API rate limits.」而非誤導人的「Watchlist is empty」。
+
+這兩個看似微小的改變，將會讓你的 Web App 從「能用」升級為「超級好用」的境界！

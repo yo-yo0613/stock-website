@@ -84,10 +84,16 @@ export const Watchlist = ({ onNavigate }: { onNavigate?: (symbol: string) => voi
       setNewSymbol("");
       return;
     }
+    
+    setNewSymbol(""); // Clear immediately for better UX
     setAdding(true);
-    await updateProfile({ watchlist: [...watchlist, sym] });
-    setNewSymbol("");
-    setAdding(false);
+    try {
+      await updateProfile({ watchlist: [...watchlist, sym] });
+    } catch (err) {
+      console.error("Failed to add symbol", err);
+    } finally {
+      setAdding(false);
+    }
   };
 
   const handleRemove = async (e: React.MouseEvent, symToRemove: string) => {
@@ -157,9 +163,14 @@ export const Watchlist = ({ onNavigate }: { onNavigate?: (symbol: string) => voi
                 </button>
               </motion.div>
             ))}
-            {data.length === 0 && !loading && (
+            {data.length === 0 && !loading && watchlist.length === 0 && (
               <div className="text-center text-neutral-500 text-sm mt-4">
                 Watchlist is empty
+              </div>
+            )}
+            {data.length === 0 && !loading && watchlist.length > 0 && (
+              <div className="text-center text-red-500/80 text-sm mt-4 px-4 bg-red-500/10 py-3 rounded-lg border border-red-500/20">
+                Failed to load data. This might be due to API rate limits.
               </div>
             )}
           </motion.div>
