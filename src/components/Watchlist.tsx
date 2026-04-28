@@ -38,37 +38,81 @@ export const Watchlist = ({ onNavigate }: { onNavigate?: (symbol: string) => voi
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const promises = watchlist.map(symbol =>
-          fetch(`/api/finance/v8/finance/chart/${symbol}?interval=1d&range=1d`).then(r => r.json()).catch(() => null)
-        );
-        const results = await Promise.all(promises);
-
-        const formattedData = results.map((json) => {
-          //const sym = watchlist[i];
-          if (json && json.chart && json.chart.result && json.chart.result[0]) {
-            const meta = json.chart.result[0].meta;
-            if (!meta) return null;
-            const currentPrice = meta.regularMarketPrice;
-            const prevClose = meta.chartPreviousClose || currentPrice;
-            const changePercent = ((currentPrice - prevClose) / prevClose) * 100;
-            return {
-              symbol: meta.symbol,
-              name: meta.symbol,
-              price: `${getCurrencySymbol()}${currentPrice.toFixed(2)}`,
-              change: `${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}%`,
-              up: changePercent >= 0,
-            };
-          }
-          return null;
-        }).filter(item => item !== null) as StockData[];
-
-        setData(formattedData);
-      } catch (error) {
-        console.error("Error fetching Yahoo finance data:", error);
-      } finally {
+      if (watchlist.length === 0) {
+        setData([]);
         setLoading(false);
+        return;
       }
+
+      let fetchedData: StockData[] = [];
+      let fetchSuccess = false;
+
+      // 1. Try Yahoo Finance Batch Endpoint
+      try {
+        const res = await fetch(`/api/finance/v7/finance/quote?symbols=${watchlist.join(',')}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.quoteResponse && json.quoteResponse.result && json.quoteResponse.result.length > 0) {
+            fetchedData = json.quoteResponse.result.map((item: any) => {
+              const currentPrice = item.regularMarketPrice;
+              const changePercent = item.regularMarketChangePercent;
+              return {
+                symbol: item.symbol,
+                name: item.shortName || item.longName || item.symbol,
+                price: `${getCurrencySymbol()}${currentPrice.toFixed(2)}`,
+                change: `${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}%`,
+                up: changePercent >= 0,
+              };
+            });
+            fetchSuccess = true;
+          }
+        }
+      } catch (error) {
+        console.warn("Yahoo batch fetch failed, attempting fallback...", error);
+      }
+
+      // 2. Try Finnhub Fallback
+      if (!fetchSuccess) {
+        const finnhubKey = import.meta.env.VITE_FINNHUB_API_KEY;
+        if (finnhubKey) {
+          try {
+            const promises = watchlist.map(async (symbol) => {
+              let cleanSymbol = symbol;
+              // Basic crypto mapping for Finnhub
+              if (symbol === 'BTC-USD') cleanSymbol = 'BINANCE:BTCUSDT';
+              if (symbol === 'ETH-USD') cleanSymbol = 'BINANCE:ETHUSDT';
+              
+              const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${cleanSymbol}&token=${finnhubKey}`);
+              if (!r.ok) return null;
+              const data = await r.json();
+              if (data && data.c) {
+                const currentPrice = data.c;
+                const prevClose = data.pc;
+                const changePercent = prevClose ? ((currentPrice - prevClose) / prevClose) * 100 : 0;
+                return {
+                  symbol: symbol,
+                  name: symbol,
+                  price: `${getCurrencySymbol()}${currentPrice.toFixed(2)}`,
+                  change: `${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}%`,
+                  up: changePercent >= 0,
+                };
+              }
+              return null;
+            });
+            const results = await Promise.all(promises);
+            const validResults = results.filter(item => item !== null) as StockData[];
+            if (validResults.length > 0) {
+              fetchedData = validResults;
+              fetchSuccess = true;
+            }
+          } catch (err) {
+            console.error("Finnhub fetch failed", err);
+          }
+        }
+      }
+
+      setData(fetchSuccess ? fetchedData : []);
+      setLoading(false);
     };
 
     fetchData();
