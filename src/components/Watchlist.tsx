@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown, Plus, X, Search } from "lucide-react";
 import { motion, type Variants } from "framer-motion";
 import { useUser } from "../context/UserContext";
+import { apiFetch } from "../lib/api";
 
 type StockData = {
   symbol: string;
@@ -132,9 +133,13 @@ export const Watchlist = ({ onNavigate }: { onNavigate?: (symbol: string) => voi
     setNewSymbol(""); // Clear immediately for better UX
     setAdding(true);
     try {
+      await apiFetch('/watchlist.php', {
+        method: 'POST',
+        body: { symbol: sym }
+      });
       await updateProfile({ watchlist: [...watchlist, sym] });
     } catch (err) {
-      console.error("Failed to add symbol", err);
+      console.error("Failed to add symbol via PHP API", err);
     } finally {
       setAdding(false);
     }
@@ -142,7 +147,15 @@ export const Watchlist = ({ onNavigate }: { onNavigate?: (symbol: string) => voi
 
   const handleRemove = async (e: React.MouseEvent, symToRemove: string) => {
     e.stopPropagation();
-    await updateProfile({ watchlist: watchlist.filter(s => s !== symToRemove) });
+    try {
+      await apiFetch('/watchlist.php', {
+        method: 'DELETE',
+        body: { symbol: symToRemove }
+      });
+      await updateProfile({ watchlist: watchlist.filter(s => s !== symToRemove) });
+    } catch (err) {
+      console.error("Failed to remove symbol via PHP API", err);
+    }
   };
 
   return (

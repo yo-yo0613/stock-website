@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Search, Plus, Check } from "lucide-react";
 import { useUser } from "../context/UserContext";
+import { apiFetch } from "../lib/api";
 
 export const SearchWidget = () => {
   const [query, setQuery] = useState("");
@@ -39,9 +40,13 @@ export const SearchWidget = () => {
     if (!watchlist.includes(symbol)) {
       setAddedSymbols(prev => new Set(prev).add(symbol));
       try {
+        await apiFetch('/watchlist.php', {
+          method: 'POST',
+          body: { symbol }
+        });
         await updateProfile({ watchlist: [...watchlist, symbol] });
       } catch (error) {
-        console.error("Failed to add to watchlist", error);
+        console.error("Failed to add to watchlist via PHP API", error);
         // Revert UI optimistic state on failure
         setAddedSymbols(prev => {
           const next = new Set(prev);

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { apiFetch, setAuthToken } from '../lib/api';
 import { motion } from 'framer-motion';
 import { Lock, Mail, ChevronRight, AlertCircle } from 'lucide-react';
 
@@ -18,20 +18,27 @@ export const AuthScreen = () => {
     setMessage(null);
 
     try {
+      const endpoint = '/auth.php';
+      const body = {
+        action: isSignUp ? 'register' : 'login',
+        email,
+        password
+      };
+
+      const data = await apiFetch(endpoint, {
+        method: 'POST',
+        body
+      });
+
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-        if (error) throw error;
         setMessage('Registration successful! You can now sign in.');
         setIsSignUp(false);
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
+        if (data.token) {
+          setAuthToken(data.token);
+          // Reload the page to let UserContext fetch profile
+          window.location.reload();
+        }
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred during authentication');
@@ -64,12 +71,12 @@ export const AuthScreen = () => {
             {isSignUp ? 'Create Account' : 'Welcome Back'}
           </h2>
 
-          {import.meta.env.VITE_SUPABASE_ANON_KEY === undefined && (
-            <div className="bg-orange-500/10 border border-orange-500/50 text-orange-400 p-4 rounded-xl text-sm flex items-start gap-2 mb-6">
+          {import.meta.env.VITE_PHP_API_URL === undefined && (
+            <div className="bg-blue-500/10 border border-blue-500/50 text-blue-400 p-4 rounded-xl text-sm flex items-start gap-2 mb-6">
               <AlertCircle size={18} className="shrink-0 mt-0.5" />
               <div>
-                <strong className="block mb-1">Missing Environment Variables!</strong>
-                Please add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to your Vercel project settings and Redeploy.
+                <strong className="block mb-1">Local Testing Mode</strong>
+                Connecting to local XAMPP backend by default. For production, set `VITE_PHP_API_URL`.
               </div>
             </div>
           )}

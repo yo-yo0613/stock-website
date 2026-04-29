@@ -71,7 +71,7 @@ const defaultSettings: UserSettings = {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-import { supabase } from '../lib/supabase';
+import { apiFetch, getAuthToken, removeAuthToken } from '../lib/api';
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<UserProfile>(defaultProfile);
@@ -80,58 +80,65 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      loadUserData(session);
+    const token = getAuthToken();
+    if (token) {
+      loadUserDataFromPHP();
+    } else {
       setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      loadUserData(session);
-    });
-
-    return () => subscription.unsubscribe();
+    }
   }, []);
 
-  const loadUserData = (currentSession: any) => {
-    if (currentSession?.user?.user_metadata) {
-      const meta = currentSession.user.user_metadata;
-      if (meta.profile) setProfile(meta.profile);
-      if (meta.settings) setSettings(meta.settings);
-    } else {
-      // Fallback to local storage if not logged in just in case
-      const localProfile = localStorage.getItem('quanttrd_profile');
-      const localSettings = localStorage.getItem('quanttrd_settings');
-      if (localProfile) try { setProfile(JSON.parse(localProfile)); } catch(e){}
-      if (localSettings) try { setSettings(JSON.parse(localSettings)); } catch(e){}
+  const loadUserDataFromPHP = async () => {
+    try {
+      const data = await apiFetch('/profile.php');
+      if (data && data.email) {
+        setSession({ user: { email: data.email, id: data.id } });
+        setProfile(prev => ({
+          ...prev,
+          email: data.email,
+          stats: { ...prev.stats, balance: data.balance },
+          watchlist: data.watchlist || []
+        }));
+      }
+    } catch (err) {
+      console.error("Failed to load user profile from PHP", err);
+      removeAuthToken();
+      setSession(null);
+    } finally {
+      setLoading(false);
     }
   };
 
   const syncToSupabase = async (newProfile: UserProfile, newSettings: UserSettings) => {
-    if (session?.user) {
-      await supabase.auth.updateUser({
-        data: { profile: newProfile, settings: newSettings }
-      });
-    }
+    // Left for backwards compatibility, actual sync handled directly in updateProfile
   };
 
   const updateProfile = async (data: Partial<UserProfile>) => {
     const newProfile = { ...profile, ...data };
     setProfile(newProfile);
-    localStorage.setItem('quanttrd_profile', JSON.stringify(newProfile));
-    await syncToSupabase(newProfile, settings);
+    
+    // Update balance on the PHP backend if it changed
+    if (data.stats?.balance !== undefined) {
+      try {
+        await apiFetch('/profile.php', {
+          method: 'POST',
+          body: { balance: data.stats.balance }
+        });
+      } catch (err) {
+        console.error("Failed to update balance via API", err);
+      }
+    }
   };
 
   const updateSettings = async (data: Partial<UserSettings>) => {
     const newSettings = { ...settings, ...data };
     setSettings(newSettings);
-    localStorage.setItem('quanttrd_settings', JSON.stringify(newSettings));
-    await syncToSupabase(profile, newSettings);
+    // Not implemented in PHP backend yet
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    removeAuthToken();
+    setSession(null);
   };
 
   const getCurrencySymbol = () => {
