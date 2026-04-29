@@ -109,10 +109,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const syncToSupabase = async (newProfile: UserProfile, newSettings: UserSettings) => {
-    // Left for backwards compatibility, actual sync handled directly in updateProfile
-  };
-
   const updateProfile = async (data: Partial<UserProfile>) => {
     const newProfile = { ...profile, ...data };
     setProfile(newProfile);
