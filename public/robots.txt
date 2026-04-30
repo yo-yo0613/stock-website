@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /api/
+Disallow: /backend/
+Allow: /
+
+Sitemap: https://stock-website-ad6i.vercel.app/sitemap.xml
