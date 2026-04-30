@@ -7,7 +7,8 @@ import { SearchWidget } from "./components/SearchWidget";
 import { PortfolioStats } from "./components/PortfolioStats";
 import { MarketsView, AlertsView, SettingsView, ProfileView, AnalysisView, NewsView } from "./components/Views";
 import { SpreadsheetView } from "./components/SpreadsheetView";
-import { LineChart, LayoutDashboard, Settings, Bell, User, TrendingUp, Newspaper, Share, X, LogOut, Database } from "lucide-react";
+import { ForumView } from "./components/ForumView";
+import { LineChart, LayoutDashboard, Settings, Bell, User, TrendingUp, Newspaper, Share, X, LogOut, Database, MessageSquare } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useUser } from "./context/UserContext";
 import { AuthScreen } from "./components/Auth";
@@ -74,6 +75,7 @@ function App() {
             { icon: <Database size={20} />, label: "Data Studio" },
             { icon: <LineChart size={20} />, label: "Markets" },
             { icon: <Newspaper size={20} />, label: "News" },
+            { icon: <MessageSquare size={20} />, label: "Forum" },
             { icon: <Bell size={20} />, label: "Alerts" },
           ].map((item, i) => {
             const active = activeTab === item.label;
@@ -167,6 +169,7 @@ function App() {
               {activeTab === "Data Studio" && "Upload and analyze your custom spreadsheets locally."}
               {activeTab === "Markets" && "Global market performance."}
               {activeTab === "News" && "Live financial news and market updates."}
+              {activeTab === "Forum" && "Community discussion and strategy sharing."}
               {activeTab === "Alerts" && "Your latest notifications."}
               {activeTab === "Settings" && "Manage your preferences."}
               {activeTab === "Profile" && "Your account details."}
@@ -192,6 +195,7 @@ function App() {
         {activeTab === "Data Studio" && <SpreadsheetView />}
         {activeTab === "Markets" && <MarketsView onNavigate={handleNavigateAnalysis} />}
         {activeTab === "News" && <NewsView />}
+        {activeTab === "Forum" && <ForumView />}
         {activeTab === "Alerts" && <AlertsView />}
         {activeTab === "Settings" && <SettingsView />}
         {activeTab === "Profile" && <ProfileView />}
@@ -203,7 +207,7 @@ function App() {
           { icon: <LayoutDashboard size={22} />, label: "Dashboard" },
           { icon: <Database size={22} />, label: "Data Studio" },
           { icon: <LineChart size={22} />, label: "Markets" },
-          { icon: <Newspaper size={22} />, label: "News" },
+          { icon: <MessageSquare size={22} />, label: "Forum" },
           { icon: <User size={22} />, label: "Profile" }
         ].map((item, i) => {
           const active = activeTab === item.label;

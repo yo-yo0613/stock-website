@@ -1,82 +1,42 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { LineChart, BarChart2, Bell, Settings, User, Shield, CreditCard, Save, Edit2, Phone, Building, Wallet, CheckCircle2, Lock, Smartphone, Upload } from "lucide-react";
+import { BarChart2, Bell, Settings, User, Shield, CreditCard, Save, Edit2, Phone, Building, Wallet, CheckCircle2, Lock, Smartphone, Upload } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import type { CurrencyType } from "../context/UserContext";
 import { TechnicalAnalysis } from "react-ts-tradingview-widgets";
 
-export const MarketsView = ({ onNavigate }: { onNavigate?: (symbol: string) => void }) => {
-  const indices = [
-    { name: "S&P 500", symbol: "SPY", change: "+1.24%" },
-    { name: "NASDAQ", symbol: "QQQ", change: "+1.52%" },
-    { name: "DOW JONES", symbol: "DIA", change: "+0.85%" },
-    { name: "FTSE 100", symbol: "TVC:UKX", change: "+0.34%" }
-  ];
-  const crypto = [
-    { name: "Bitcoin", symbol: "BTC-USD", change: "+2.45%" },
-    { name: "Ethereum", symbol: "ETH-USD", change: "+1.80%" },
-    { name: "Solana", symbol: "SOL-USD", change: "-0.50%" },
-  ];
-  // const forex = [
-  //   { name: "EUR/USD", symbol: "EURUSD=X", change: "+0.15%" },
-  //   { name: "GBP/USD", symbol: "GBPUSD=X", change: "-0.22%" },
-  //   { name: "USD/JPY", symbol: "JPY=X", change: "+0.45%" },
-  // ];
+import { MarketOverview, StockHeatmap } from "react-ts-tradingview-widgets";
+
+export const MarketsView = ({ }: { onNavigate?: (symbol: string) => void }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className="w-full flex flex-col gap-6"
     >
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="md:col-span-1 flex flex-col gap-6">
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center gap-3 text-primary mb-4">
-              <LineChart />
-              <h2 className="text-xl font-bold text-white">Global Markets</h2>
-            </div>
-            <p className="text-neutral-400 text-sm mb-4">Real-time status of major indices across the globe.</p>
-            <div className="space-y-4">
-              {indices.map((idx) => (
-                <div
-                  key={idx.name}
-                  onClick={() => onNavigate && onNavigate(idx.symbol)}
-                  className="flex justify-between items-center border-b border-border/50 pb-2 cursor-pointer hover:bg-[#1a1a24] p-2 rounded transition-colors group"
-                >
-                  <span className="text-white font-medium group-hover:text-primary transition-colors">{idx.name}</span>
-                  <span className="text-success text-sm font-bold">{idx.change}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center gap-3 text-warning mb-4">
-              <h2 className="text-xl font-bold text-white">Crypto Markets</h2>
-            </div>
-            <div className="space-y-4">
-              {crypto.map((idx) => (
-                <div
-                  key={idx.name}
-                  onClick={() => onNavigate && onNavigate(idx.symbol)}
-                  className="flex justify-between items-center border-b border-border/50 pb-2 cursor-pointer hover:bg-[#1a1a24] p-2 rounded transition-colors group"
-                >
-                  <span className="text-white font-medium group-hover:text-warning transition-colors">{idx.name}</span>
-                  <span className={`text-sm font-bold ${idx.change.startsWith('-') ? 'text-danger' : 'text-success'}`}>{idx.change}</span>
-                </div>
-              ))}
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-card border border-border rounded-2xl p-4 shadow-sm min-h-[500px] h-[60vh] flex flex-col">
+          <h2 className="text-xl font-bold text-white mb-4 px-2">Global Market Overview</h2>
+          <div className="flex-1 rounded-xl overflow-hidden border border-border/50">
+            <MarketOverview colorTheme="dark" width="100%" height="100%" showFloatingTooltip />
           </div>
         </div>
 
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm md:col-span-3">
-          <div className="flex items-center gap-3 text-success mb-4">
-            <BarChart2 />
-            <h2 className="text-xl font-bold text-white">Market Sentiment Data</h2>
+        <div className="lg:col-span-1 bg-card border border-border rounded-2xl p-4 shadow-sm min-h-[500px] h-[60vh] flex flex-col">
+          <h2 className="text-xl font-bold text-white mb-4 px-2">S&P 500 Heatmap</h2>
+          <div className="flex-1 rounded-xl overflow-hidden border border-border/50">
+            <StockHeatmap colorTheme="dark" width="100%" height="100%" />
           </div>
-          <div className="w-full h-full min-h-[300px] flex items-center justify-center -mt-4">
-            <TechnicalAnalysis colorTheme="dark" symbol="SPY" width="100%" height={350} isTransparent={true} />
-          </div>
+        </div>
+      </div>
+
+      <div className="bg-card border border-border rounded-2xl p-4 shadow-sm min-h-[400px] flex flex-col">
+        <div className="flex items-center gap-3 text-success mb-4 px-2">
+          <BarChart2 />
+          <h2 className="text-xl font-bold text-white">Market Sentiment & Technicals</h2>
+        </div>
+        <div className="w-full h-[400px] rounded-xl overflow-hidden border border-border/50">
+          <TechnicalAnalysis colorTheme="dark" symbol="SPY" width="100%" height="100%" isTransparent={false} />
         </div>
       </div>
     </motion.div>
@@ -389,7 +349,7 @@ export const ProfileView = () => {
   );
 };
 
-import { AdvancedRealTimeChart, CompanyProfile, SymbolInfo } from "react-ts-tradingview-widgets";
+import { AdvancedRealTimeChart, CompanyProfile, SymbolInfo, FundamentalData } from "react-ts-tradingview-widgets";
 
 export const AnalysisView = ({ symbol }: { symbol: string }) => {
   return (
@@ -414,17 +374,23 @@ export const AnalysisView = ({ symbol }: { symbol: string }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-card border border-border rounded-2xl p-4 shadow-sm overflow-hidden h-[450px] flex flex-col">
-          <h2 className="text-lg font-bold text-white mb-4 px-2">Institutional & Company Profile</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="bg-card border border-border rounded-2xl p-4 shadow-sm overflow-hidden h-[450px] flex flex-col lg:col-span-1">
+          <h2 className="text-lg font-bold text-white mb-4 px-2">Company Profile</h2>
           <div className="flex-1 rounded-xl overflow-hidden border border-border/50">
             <CompanyProfile symbol={`NASDAQ:${symbol}`} colorTheme="dark" height="100%" width="100%" />
           </div>
         </div>
-        <div className="bg-card border border-border rounded-2xl p-4 shadow-sm overflow-hidden h-[450px] flex flex-col">
-          <h2 className="text-lg font-bold text-white mb-4 px-2">Fundamentals & Summary</h2>
+        <div className="bg-card border border-border rounded-2xl p-4 shadow-sm overflow-hidden h-[450px] flex flex-col lg:col-span-1">
+          <h2 className="text-lg font-bold text-white mb-4 px-2">Symbol Info</h2>
           <div className="flex-1 rounded-xl overflow-hidden border border-border/50">
             <SymbolInfo symbol={`NASDAQ:${symbol}`} colorTheme="dark" autosize />
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-2xl p-4 shadow-sm overflow-hidden h-[450px] flex flex-col lg:col-span-1">
+          <h2 className="text-lg font-bold text-white mb-4 px-2">Fundamental Data</h2>
+          <div className="flex-1 rounded-xl overflow-hidden border border-border/50">
+            <FundamentalData symbol={`NASDAQ:${symbol}`} colorTheme="dark" width="100%" height="100%" />
           </div>
         </div>
       </div>
@@ -437,6 +403,11 @@ export const NewsView = () => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const pageSize = 5;
+
+  // In-App Reader State
+  const [selectedArticle, setSelectedArticle] = useState<any>(null);
+  const [articleHtml, setArticleHtml] = useState<string>("");
+  const [articleLoading, setArticleLoading] = useState(false);
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -462,6 +433,28 @@ export const NewsView = () => {
     return new Date(ts * 1000).toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', month: 'short', day: 'numeric' });
   };
 
+  const openArticle = async (item: any) => {
+    setSelectedArticle(item);
+    setArticleLoading(true);
+    setArticleHtml("");
+    try {
+      // Use the PHP proxy to bypass CORS and extract the article body
+      const API_BASE = import.meta.env.VITE_PHP_API_URL || "http://localhost:8000/api";
+      const res = await fetch(`${API_BASE}/news_proxy.php?url=${encodeURIComponent(item.link)}`);
+      const data = await res.json();
+      if (data.success) {
+        setArticleHtml(data.content);
+      } else {
+        setArticleHtml(`<p class="text-danger">Failed to load article: ${data.error || 'Unknown error'}</p>`);
+      }
+    } catch (e) {
+      console.error(e);
+      setArticleHtml('<p class="text-danger">Network error while fetching article.</p>');
+    } finally {
+      setArticleLoading(false);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -485,12 +478,10 @@ export const NewsView = () => {
         ) : (
           <div className="flex-1 flex flex-col gap-4">
             {currentNews.map((item, idx) => (
-              <a
+              <div
                 key={item.uuid || idx}
-                href={item.link}
-                target="_blank"
-                rel="noreferrer"
-                className="group flex flex-col sm:flex-row gap-5 p-4 rounded-xl hover:bg-[#1a1a24] border border-transparent hover:border-border transition-all outline-none"
+                onClick={() => openArticle(item)}
+                className="group flex flex-col sm:flex-row gap-5 p-4 rounded-xl hover:bg-[#1a1a24] border border-transparent hover:border-border transition-all outline-none cursor-pointer"
               >
                 {item.thumbnail?.resolutions?.[0]?.url && (
                   <div className="w-full sm:w-40 h-48 sm:h-28 shrink-0 rounded-lg overflow-hidden bg-neutral-900 shadow-md">
@@ -511,7 +502,7 @@ export const NewsView = () => {
                     ))}
                   </div>
                 </div>
-              </a>
+              </div>
             ))}
           </div>
         )}
@@ -550,6 +541,69 @@ export const NewsView = () => {
           </div>
         )}
       </div>
+
+      {/* In-App Article Reader Modal */}
+      <AnimatePresence>
+        {selectedArticle && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex justify-end bg-black/60 backdrop-blur-sm"
+            onClick={() => setSelectedArticle(null)}
+          >
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="w-full max-w-3xl h-full bg-card border-l border-border shadow-2xl overflow-y-auto flex flex-col"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="sticky top-0 bg-card/90 backdrop-blur border-b border-border p-4 flex items-center justify-between z-10">
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setSelectedArticle(null)} className="text-neutral-400 hover:text-white transition-colors bg-[#1a1a24] p-2 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  </button>
+                  <span className="text-sm font-semibold text-neutral-400 capitalize">{selectedArticle.publisher}</span>
+                </div>
+                <a href={selectedArticle.link} target="_blank" rel="noreferrer" className="text-xs bg-primary/20 text-primary px-3 py-1.5 rounded hover:bg-primary/30 transition-colors flex items-center gap-1">
+                  Open Original <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                </a>
+              </div>
+
+              <div className="p-6 md:p-10 flex-1">
+                <h1 className="text-2xl md:text-4xl font-bold text-white leading-tight mb-4">{selectedArticle.title}</h1>
+                <div className="flex items-center gap-4 text-sm text-neutral-400 mb-8 border-b border-border/50 pb-6">
+                  <span>{formatTime(selectedArticle.providerPublishTime)}</span>
+                  {selectedArticle.relatedTickers?.length > 0 && (
+                    <div className="flex gap-2">
+                      {selectedArticle.relatedTickers.slice(0, 3).map((t: string) => (
+                        <span key={t} className="bg-primary/10 text-primary px-2 py-0.5 rounded">{t}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {articleLoading ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-4 text-neutral-500">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <p>Extracting article content...</p>
+                  </div>
+                ) : (
+                  <div
+                    className="prose prose-invert prose-lg max-w-none text-neutral-300 leading-relaxed
+                               prose-a:text-primary hover:prose-a:text-blue-400
+                               prose-headings:text-white prose-headings:font-bold
+                               prose-img:rounded-xl prose-img:shadow-lg"
+                    dangerouslySetInnerHTML={{ __html: articleHtml }}
+                  />
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

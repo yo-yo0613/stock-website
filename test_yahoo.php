@@ -1,0 +1,1 @@
+﻿<?php $html = file_get_contents('https://finance.yahoo.com/news/tech-stocks-fall-after-meta-microsoft-earnings-sp-500-nasdaq-drop-stock-market-today-133100650.html', false, stream_context_create(['http' => ['method' => 'GET', 'header' => 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36']])); echo substr($html, 0, 1000);

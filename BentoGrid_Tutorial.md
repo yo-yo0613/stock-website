@@ -442,3 +442,86 @@ npm run dev
 ### 🎉 結論
 這份專案現在不只擁有流暢的 UI/UX 和酷炫的 React 動畫，它背後更有著扎實、符合業界規範的 PHP 伺服器與 JWT 驗證機制。這絕對是一份足以拿高分的期末專案作品！
 
+
+
+---
+
+## 🐳 最終上架：撰寫 Dockerfile 佈署至 Render
+
+當我們把後端改寫為 PHP 後，如果要佈署到雲端平台 (如 Render)，最穩定的做法就是使用 **Docker** 來建立專屬的運行容器，確保 PostgreSQL 驅動程式完美運作！
+
+### 1. 建立 Dockerfile
+在專案的最外層目錄新增一個名為 `Dockerfile` (沒有副檔名) 的檔案，貼上以下內容：
+
+```dockerfile
+FROM php:8.2-apache
+
+# 安裝系統必備套件與 PostgreSQL 驅動程式
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    git \
+    unzip \
+    && docker-php-ext-install pdo pdo_pgsql pgsql \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# 開啟 Apache 的 mod_rewrite
+RUN a2enmod rewrite
+
+# 安裝 Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# 設定工作目錄
+WORKDIR /var/www/html
+
+# 僅複製 backend 資料夾到伺服器根目錄
+COPY backend/ /var/www/html/
+
+# 安裝 PHP 相依套件
+RUN composer install --no-dev --optimize-autoloader
+
+# 調整權限
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html
+
+EXPOSE 80
+```
+
+### 2. 佈署至 Render
+1. 將專案推送到 GitHub。
+2. 進入 Render.com 建立新的 **Web Service**。
+3. 選擇你的 Repository，在 Environment 選擇 `Docker`。
+4. 點擊 Deploy！Render 就會幫你把 PHP API 完美運行起來了。
+
+### 3. Vercel 前端設定
+最後，前往 Vercel (你的 React 前端佈署地)：
+- 在專案的 Settings -> Environment Variables 裡，新增：
+  - Key: `VITE_PHP_API_URL`
+  - Value: `https://你的-render-網址.onrender.com/api`
+- 重新佈署 (Redeploy) Vercel 專案。
+
+**大功告成！** 你現在擁有了一個完全獨立、前後端分離、且搭載高安全性 JWT 認證的企業級全端專案！
+
+
+
+---
+
+## 📈 進階升級：富途牛牛級別專業看盤與論壇系統
+
+在專案的最後階段，我們將系統大幅升級，對標業界頂級金融軟體（如富途牛牛），加入了專業級的市場分析、沉浸式新聞與社群論壇。
+
+### 1. 專業級 Analysis & Market 儀表板
+我們引入了更多 `react-ts-tradingview-widgets` 的高階組件：
+*   **MarketsView**：加入了 `MarketOverview` (全球市場總覽) 與 `StockHeatmap` (S&P 500 板塊熱力圖)。
+*   **AnalysisView**：除了原有的進階圖表外，加入了 `CompanyProfile` (公司簡介)、`SymbolInfo` (個股資訊) 與 `FundamentalData` (基本面數據，包含 P/E, 市值等)。
+
+### 2. 沉浸式 In-App 新聞閱讀器 (PHP Proxy Scraper)
+為了解決點擊新聞會跳轉至外部網站 (如 Yahoo Finance) 的問題，我們實作了一支 PHP 爬蟲代理 (`news_proxy.php`)。
+*   **原理**：前端將新聞網址發給 PHP 後端，PHP 使用 `file_get_contents` 抓取原始碼，並過濾掉廣告與追蹤腳本，提取純淨的內文 (如 `<div class="caas-body">`)。
+*   **前端呈現**：搭配 `@tailwindcss/typography` 插件，在網站內部彈出一個全螢幕、帶有毛玻璃特效 (Glassmorphism) 的 Modal，實現「不出站」的沉浸式閱讀體驗。
+
+### 3. PHP 全端專屬投資論壇
+為了增加用戶黏著度，我們建立了一個完整的社群論壇 (`ForumView.tsx`)。
+*   **資料庫結構**：在 PostgreSQL 中新增了 `forum_posts`, `forum_comments`, `forum_likes` 三張資料表。
+*   **後端 API**：新增 `forum.php` 處理發文、留言與按讚 (包含防止重複按讚的邏輯)。
+*   **前端 UI**：採用 Framer Motion 動畫，打造流暢的推文列表與展開動畫，讓用戶能即時分享投資策略。
+
