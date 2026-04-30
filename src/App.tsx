@@ -273,6 +273,7 @@ function AppContent() {
             className={({ isActive }: { isActive: boolean }) => `flex flex-col items-center justify-center w-full h-12 rounded-xl transition-colors ${isActive ? 'text-primary' : 'text-neutral-500 hover:text-neutral-300'}`}
           >
             {item.label === 'Dashboard' && <LayoutDashboard size={22} />}
+            {item.label === 'Analysis' && <TrendingUp size={22} />}
             {item.label === 'Data Studio' && <Database size={22} />}
             {item.label === 'Markets' && <LineChart size={22} />}
             {item.label === 'News' && <Newspaper size={22} />}
