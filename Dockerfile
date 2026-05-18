@@ -1,3 +1,18 @@
+# Stage 1: Build frontend with Node.js
+FROM node:18 AS builder
+
+WORKDIR /app
+
+# Copy frontend files
+COPY package.json package-lock.json tsconfig*.json vite.config.ts postcss.config.js tailwind.config.js ./
+COPY src/ ./src/
+COPY public/ ./public/
+COPY index.html ./
+
+# Install dependencies and build
+RUN npm install && npm run build
+
+# Stage 2: Runtime with PHP and Apache
 FROM php:8.2-apache
 
 # Install system dependencies and PostgreSQL driver
@@ -17,16 +32,14 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
+# Copy the built frontend from builder stage
+COPY --from=builder /app/dist/ /var/www/html/
+
 # Copy the backend files into the Apache document root
-# We only copy the backend folder because Render only needs the PHP API
-COPY backend/ /var/www/html/
+COPY backend/ /var/www/html/backend/
 
 # Install PHP dependencies (firebase/php-jwt)
 RUN composer install --no-dev --optimize-autoloader
-
-# Update Apache configuration to use the correct DocumentRoot if necessary
-# By default, Apache serves from /var/www/html, which now contains your api/ and config/ folders.
-# So https://your-render-url.onrender.com/api/auth.php will work perfectly!
 
 # Adjust permissions
 RUN chown -R www-data:www-data /var/www/html \
