@@ -48,7 +48,7 @@ export const AuthScreen = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4 selection:bg-primary/30 font-sans text-white relative overflow-hidden">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 selection:bg-primary/30 font-sans text-white relative overflow-hidden">
       {/* Decorative Blur Orbs */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 blur-[128px] rounded-full pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 blur-[128px] rounded-full pointer-events-none" />
@@ -62,12 +62,12 @@ export const AuthScreen = () => {
           <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-white font-bold text-2xl mx-auto mb-6 shadow-lg shadow-primary/20">
             Q
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white mb-2">QuantTrd</h1>
-          <p className="text-neutral-400">Professional Financial Analytics</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">QuantTrd</h1>
+          <p className="text-muted-foreground">Professional Financial Analytics</p>
         </div>
 
-        <div className="bg-[#13131a]/80 backdrop-blur-xl border border-border rounded-3xl p-8 shadow-2xl">
-          <h2 className="text-xl font-bold mb-6 text-white text-center">
+        <div className="bg-card/80 backdrop-blur-xl border border-border rounded-3xl p-8 shadow-2xl">
+          <h2 className="text-xl font-bold mb-6 text-foreground text-center">
             {isSignUp ? 'Create Account' : 'Welcome Back'}
           </h2>
 
@@ -96,31 +96,31 @@ export const AuthScreen = () => {
             )}
 
             <div>
-              <label className="text-sm font-medium text-neutral-400 mb-2 block">Email Address</label>
+              <label className="text-sm font-medium text-muted-foreground mb-2 block">Email Address</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={18} />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                 <input 
                   type="email" 
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
-                  className="w-full bg-[#0a0a0f] border border-border focus:border-primary/50 text-white rounded-xl py-3 pl-10 pr-4 outline-none transition-colors"
+                  className="w-full bg-background border border-border focus:border-primary/50 text-foreground rounded-xl py-3 pl-10 pr-4 outline-none transition-colors"
                   placeholder="name@company.com"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-neutral-400 mb-2 block">Password</label>
+              <label className="text-sm font-medium text-muted-foreground mb-2 block">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={18} />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                 <input 
                   type="password" 
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="w-full bg-[#0a0a0f] border border-border focus:border-primary/50 text-white rounded-xl py-3 pl-10 pr-4 outline-none transition-colors"
+                  className="w-full bg-background border border-border focus:border-primary/50 text-foreground rounded-xl py-3 pl-10 pr-4 outline-none transition-colors"
                   placeholder="••••••••"
                 />
               </div>
@@ -136,7 +136,7 @@ export const AuthScreen = () => {
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-neutral-400">
+          <div className="mt-6 text-center text-sm text-muted-foreground">
             {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
             <button 
               type="button"

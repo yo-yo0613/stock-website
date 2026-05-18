@@ -26,10 +26,10 @@ export const PortfolioStats = () => {
           <div className="p-2 bg-primary/20 rounded-lg text-primary">
             <Wallet size={20} />
           </div>
-          <h3 className="text-white font-medium">Total Balance</h3>
+          <h3 className="text-foreground font-medium">Total Balance</h3>
         </div>
         {!isEditing ? (
-          <button onClick={() => setIsEditing(true)} className="opacity-0 group-hover:opacity-100 p-1.5 text-neutral-400 hover:text-white bg-neutral-800 rounded transition-all">
+          <button onClick={() => setIsEditing(true)} className="opacity-0 group-hover:opacity-100 p-1.5 text-muted-foreground hover:text-foreground bg-neutral-800 rounded transition-all">
             <Edit2 size={14} />
           </button>
         ) : (
@@ -44,12 +44,12 @@ export const PortfolioStats = () => {
         {isEditing ? (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <span className="text-neutral-500">{getCurrencySymbol()}</span>
+              <span className="text-muted-foreground">{getCurrencySymbol()}</span>
               <input 
                 type="number" 
                 value={balance} 
                 onChange={(e) => setBalance(Number(e.target.value))}
-                className="bg-[#1a1a24] text-2xl font-bold text-white border border-border outline-none rounded p-1 w-full" 
+                className="bg-card-hover text-2xl font-bold text-foreground border border-border outline-none rounded p-1 w-full" 
               />
             </div>
             <div className="flex items-center gap-2">
@@ -66,24 +66,24 @@ export const PortfolioStats = () => {
           </div>
         ) : (
           <div>
-            <h1 className="text-4xl font-bold text-white tracking-tight">{getCurrencySymbol()}{(profile.stats?.balance || 124562).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h1>
+            <h1 className="text-4xl font-bold text-foreground tracking-tight">{getCurrencySymbol()}{(profile.stats?.balance || 124562).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h1>
             <div className="flex items-center gap-2 mt-2">
               <span className="flex items-center text-success bg-success/10 px-2 py-1 rounded text-xs font-semibold">
                 <ArrowUpRight size={14} className="mr-1" />
                 +{(profile.stats?.profit || 12.5).toFixed(1)}%
               </span>
-              <span className="text-neutral-500 text-sm">vs last month</span>
+              <span className="text-muted-foreground text-sm">vs last month</span>
             </div>
           </div>
         )}
       </div>
 
-      <div className="flex items-center justify-between mt-6 p-3 bg-[#1a1a24] rounded-xl border border-border">
+      <div className="flex items-center justify-between mt-6 p-3 bg-card-hover rounded-xl border border-border">
         <div className="flex items-center gap-3">
           <Activity size={18} className="text-primary" />
-          <span className="text-sm font-medium text-neutral-300">Active Positions</span>
+          <span className="text-sm font-medium text-muted-foreground">Active Positions</span>
         </div>
-        <span className="text-white font-bold">{profile.stats?.positions || 14}</span>
+        <span className="text-foreground font-bold">{profile.stats?.positions || 14}</span>
       </div>
     </div>
   );

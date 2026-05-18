@@ -56,6 +56,7 @@ $xpath = new DOMXPath($doc);
 // Try multiple common article body class names
 $queries = [
     '//div[contains(@class, "caas-body")]',
+    '//div[contains(@class, "body yf-")]',
     '//div[contains(@class, "article-body")]',
     '//article',
     '//div[contains(@class, "body")]'
@@ -80,7 +81,11 @@ if ($bodyHtml !== '') {
     $bodyHtml = preg_replace('#<iframe(.*?)></iframe>#is', '', $bodyHtml);
     // Remove Yahoo's "Read more" buttons or readmore divs
     $bodyHtml = preg_replace('#<div class="readmore(.*?)>(.*?)</div>#is', '', $bodyHtml);
-    
+    // Remove inline svgs and generic buttons that clutter the view
+    $bodyHtml = preg_replace('#<svg(.*?)>(.*?)</svg>#is', '', $bodyHtml);
+    $bodyHtml = preg_replace('#<button(.*?)>(.*?)</button>#is', '', $bodyHtml);
+    $bodyHtml = preg_replace('#<a href="([^"]+)"([^>]*)>#i', '<a href="$1" target="_blank" rel="noreferrer" class="text-primary hover:underline"$2>', $bodyHtml);
+
     echo json_encode(["success" => true, "content" => $bodyHtml]);
 } else {
     echo json_encode(["error" => "Could not extract article content from page."]);

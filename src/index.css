@@ -3,8 +3,26 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --background: #f8fafc;
+    --card: #ffffff;
+    --card-hover: #f1f5f9;
+    --border: #e2e8f0;
+    --foreground: #0f172a;
+    --muted-foreground: #64748b;
+  }
+
+  .dark {
+    --background: #0a0a0f;
+    --card: #13131a;
+    --card-hover: #1a1a24;
+    --border: #2e2e3e;
+    --foreground: #ffffff;
+    --muted-foreground: #9ca3af;
+  }
+
   body {
-    @apply bg-background text-white antialiased overflow-x-hidden p-0 m-0;
+    @apply bg-background text-foreground antialiased overflow-x-hidden p-0 m-0 transition-colors duration-300;
   }
 }
 

@@ -82,11 +82,11 @@ export const StockChart = ({ onNavigate }: { onNavigate?: () => void }) => {
         >
           <div className="flex justify-between items-baseline mb-4 px-2">
             <div className="cursor-pointer group" onClick={onNavigate}>
-              <h3 className="text-xl font-bold text-white group-hover:text-primary transition-colors flex items-center gap-2">
+              <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors flex items-center gap-2">
                 {meta.symbol}
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-0 group-hover:opacity-100 transition-opacity"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
               </h3>
-              <p className="text-sm text-neutral-400 group-hover:text-neutral-300 transition-colors">{meta.name} - View Analysis</p>
+              <p className="text-sm text-muted-foreground group-hover:text-muted-foreground transition-colors">{meta.name} - View Analysis</p>
             </div>
             <div className="text-right">
               <motion.h3 

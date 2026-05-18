@@ -1,4 +1,4 @@
-﻿import { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { BrowserRouter as Router, Routes, Route, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { Helmet, HelmetProvider } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,10 +31,10 @@ const routeConfig = [
     title: "QuantTrd | Analysis",
   },
   {
-    path: "/data-studio",
-    label: "Data Studio",
-    description: "Upload and analyze your custom spreadsheets locally.",
-    title: "QuantTrd | Data Studio",
+    path: "/forum",
+    label: "Forum",
+    description: "Community discussion and strategy sharing.",
+    title: "QuantTrd | Forum",
   },
   {
     path: "/markets",
@@ -49,10 +49,10 @@ const routeConfig = [
     title: "QuantTrd | News",
   },
   {
-    path: "/forum",
-    label: "Forum",
-    description: "Community discussion and strategy sharing.",
-    title: "QuantTrd | Forum",
+    path: "/data-studio",
+    label: "Data Studio",
+    description: "Upload and analyze your custom spreadsheets locally.",
+    title: "QuantTrd | Data Studio",
   },
   {
     path: "/alerts",
@@ -148,7 +148,7 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center text-white">
+      <div className="min-h-screen bg-background flex items-center justify-center text-foreground">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
@@ -159,11 +159,11 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex text-white font-sans selection:bg-primary/30">
-      <nav className="w-20 md:w-64 border-r border-border hidden sm:flex flex-col p-4 bg-[#0a0a0f] z-10 sticky top-0 h-screen shrink-0">
+    <div className="min-h-screen bg-background flex text-foreground font-sans selection:bg-primary/30">
+      <nav className="w-20 md:w-64 border-r border-border hidden sm:flex flex-col p-4 bg-background z-10 sticky top-0 h-screen shrink-0">
         <div className="flex items-center gap-3 px-2 mb-10 text-primary">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold">Q</div>
-          <span className="font-bold text-xl hidden md:block text-white">QuantTrd</span>
+          <span className="font-bold text-xl hidden md:block text-foreground">QuantTrd</span>
         </div>
 
         <div className="flex-1 space-y-2">
@@ -172,7 +172,7 @@ function AppContent() {
               key={i}
               to={item.path}
               end={item.path === "/"}
-              className={({ isActive }: { isActive: boolean }) => `relative flex items-center gap-3 p-3 rounded-xl transition-colors ${isActive ? 'text-white' : 'text-neutral-400 hover:bg-[#1a1a24] hover:text-white'}`}
+              className={({ isActive }: { isActive: boolean }) => `relative flex items-center gap-3 p-3 rounded-xl transition-colors ${isActive ? 'text-foreground' : 'text-muted-foreground hover:bg-card-hover hover:text-foreground'}`}
             >
               {({ isActive }: { isActive: boolean }) => (
                 <>
@@ -201,7 +201,7 @@ function AppContent() {
             <NavLink
               key={i}
               to={item.path}
-              className={({ isActive }: { isActive: boolean }) => `relative flex items-center gap-3 p-3 rounded-xl transition-colors ${isActive ? 'text-white' : 'text-neutral-400 hover:bg-[#1a1a24] hover:text-white'}`}
+              className={({ isActive }: { isActive: boolean }) => `relative flex items-center gap-3 p-3 rounded-xl transition-colors ${isActive ? 'text-foreground' : 'text-muted-foreground hover:bg-card-hover hover:text-foreground'}`}
             >
               {({ isActive }: { isActive: boolean }) => (
                 <>
@@ -234,18 +234,27 @@ function AppContent() {
       </nav>
 
       <main className="flex-1 p-4 md:p-8 overflow-y-auto w-full max-w-7xl mx-auto pb-24 sm:pb-8 relative">
-        <button
-          onClick={() => setShowQRModal(true)}
-          className="absolute top-4 md:top-8 right-4 md:right-8 bg-primary/20 hover:bg-primary/40 text-primary p-2 rounded-full transition-colors z-20 flex items-center justify-center shadow-lg"
-          title="Install App / Share"
-        >
-          <Share size={20} />
-        </button>
+        <div className="absolute top-4 md:top-8 right-4 md:right-8 flex items-center gap-3 z-20">
+          <button
+            onClick={() => navigate('/settings')}
+            className="sm:hidden bg-card-hover hover:bg-card text-muted-foreground p-2 rounded-full transition-colors shadow-sm border border-border"
+            title="Settings"
+          >
+            <Settings size={20} />
+          </button>
+          <button
+            onClick={() => setShowQRModal(true)}
+            className="bg-primary/20 hover:bg-primary/40 text-primary p-2 rounded-full transition-colors flex items-center justify-center shadow-lg"
+            title="Install App / Share"
+          >
+            <Share size={20} />
+          </button>
+        </div>
 
         <header className="flex flex-col mb-8 pr-12">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{currentRoute.label}</h1>
-            <p className="text-neutral-400 mt-1">{pageDescription}</p>
+            <p className="text-muted-foreground mt-1">{pageDescription}</p>
           </div>
         </header>
 
@@ -254,30 +263,31 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<DashboardView onNavigate={handleNavigateAnalysis} />} />
           <Route path="/analysis" element={<AnalysisView symbol={routeSymbol} />} />
-          <Route path="/data-studio" element={<SpreadsheetView />} />
+          <Route path="/forum" element={<ForumView />} />
           <Route path="/markets" element={<MarketsView onNavigate={handleNavigateAnalysis} />} />
           <Route path="/news" element={<NewsView />} />
-          <Route path="/forum" element={<ForumView />} />
+          <Route path="/data-studio" element={<SpreadsheetView />} />
           <Route path="/alerts" element={<AlertsView />} />
           <Route path="/settings" element={<SettingsView />} />
           <Route path="/profile" element={<ProfileView />} />
+          <Route path="/data-studio" element={<SpreadsheetView />} />
         </Routes>
       </main>
 
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-[#0a0a0f]/95 backdrop-blur-md border-t border-border flex justify-around items-center p-2 z-50 pb-safe">
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-border flex justify-around items-center p-2 z-50 pb-safe">
         {routeConfig.slice(0, 5).map((item, i) => (
           <NavLink
             key={i}
             to={item.path}
             end={item.path === "/"}
-            className={({ isActive }: { isActive: boolean }) => `flex flex-col items-center justify-center w-full h-12 rounded-xl transition-colors ${isActive ? 'text-primary' : 'text-neutral-500 hover:text-neutral-300'}`}
+            className={({ isActive }: { isActive: boolean }) => `flex flex-col items-center justify-center w-full h-12 rounded-xl transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-muted-foreground'}`}
           >
             {item.label === 'Dashboard' && <LayoutDashboard size={22} />}
             {item.label === 'Analysis' && <TrendingUp size={22} />}
-            {item.label === 'Data Studio' && <Database size={22} />}
+            {item.label === 'Forum' && <MessageSquare size={22} />}
             {item.label === 'Markets' && <LineChart size={22} />}
             {item.label === 'News' && <Newspaper size={22} />}
-            {item.label === 'Forum' && <MessageSquare size={22} />}
+            {item.label === 'Data Studio' && <Database size={22} />}
             <span className="text-[10px] mt-1">{item.label}</span>
           </NavLink>
         ))}
@@ -300,7 +310,7 @@ function AppContent() {
               className="bg-card border border-border shadow-2xl p-6 rounded-3xl w-full max-w-md"
             >
               <h2 className="text-xl font-bold mb-4">Share or install QuantTrd</h2>
-              <p className="text-neutral-400 mb-6">Scan the QR code or share the URL to install this app on your phone.</p>
+              <p className="text-muted-foreground mb-6">Scan the QR code or share the URL to install this app on your phone.</p>
               <div className="flex justify-center mb-6">
                 <QRCodeSVG value={window.location.href} size={220} bgColor="#0a0a0f" fgColor="#ffffff" />
               </div>

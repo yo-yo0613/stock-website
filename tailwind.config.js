@@ -4,13 +4,16 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        background: '#0a0a0f',
-        card: '#13131a',
-        'card-hover': '#1a1a24',
-        border: '#2e2e3e',
+        background: 'var(--background)',
+        card: 'var(--card)',
+        'card-hover': 'var(--card-hover)',
+        border: 'var(--border)',
+        foreground: 'var(--foreground)',
+        'muted-foreground': 'var(--muted-foreground)',
         primary: '#3b82f6', // blue-500
         success: '#22c55e', // green-500
         danger: '#ef4444', // red-500

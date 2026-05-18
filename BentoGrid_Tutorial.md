@@ -514,14 +514,69 @@ EXPOSE 80
 *   **MarketsView**：加入了 `MarketOverview` (全球市場總覽) 與 `StockHeatmap` (S&P 500 板塊熱力圖)。
 *   **AnalysisView**：除了原有的進階圖表外，加入了 `CompanyProfile` (公司簡介)、`SymbolInfo` (個股資訊) 與 `FundamentalData` (基本面數據，包含 P/E, 市值等)。
 
-### 2. 沉浸式 In-App 新聞閱讀器 (PHP Proxy Scraper)
-為了解決點擊新聞會跳轉至外部網站 (如 Yahoo Finance) 的問題，我們實作了一支 PHP 爬蟲代理 (`news_proxy.php`)。
-*   **原理**：前端將新聞網址發給 PHP 後端，PHP 使用 `file_get_contents` 抓取原始碼，並過濾掉廣告與追蹤腳本，提取純淨的內文 (如 `<div class="caas-body">`)。
-*   **前端呈現**：搭配 `@tailwindcss/typography` 插件，在網站內部彈出一個全螢幕、帶有毛玻璃特效 (Glassmorphism) 的 Modal，實現「不出站」的沉浸式閱讀體驗。
+### 2. 沉浸式 In-App 新聞閱讀器 (PHP Proxy Scraper) 升級版
+為了解決點擊新聞會跳轉至外部網站的問題，我們實作了一支 PHP 爬蟲代理 (`news_proxy.php`)。
+*   **強化的爬蟲演算法**：針對 Yahoo Finance 最新改版的動態 DOM 結構，我們升級了 XPath 選擇器，能更精準地抓取 `<article>` 或 `div.body yf-` 內的文字，並過濾掉 SVG 與按鈕等雜訊。
+*   **前端呈現**：搭配 `@tailwindcss/typography` 插件，在網站內部彈出一個全螢幕的 Modal，實現「不出站」的沉浸式閱讀體驗。
 
-### 3. PHP 全端專屬投資論壇
-為了增加用戶黏著度，我們建立了一個完整的社群論壇 (`ForumView.tsx`)。
-*   **資料庫結構**：在 PostgreSQL 中新增了 `forum_posts`, `forum_comments`, `forum_likes` 三張資料表。
-*   **後端 API**：新增 `forum.php` 處理發文、留言與按讚 (包含防止重複按讚的邏輯)。
-*   **前端 UI**：採用 Framer Motion 動畫，打造流暢的推文列表與展開動畫，讓用戶能即時分享投資策略。
+### 3. Threads 風格投資論壇與 Cloudinary 雲端圖床
+為了增加用戶黏著度，我們將原本的傳統論壇大幅翻新，打造出類似 Threads / Twitter (X) 的現代化社群體驗 (`ForumView.tsx`)。
+*   **瀑布流與選填標題**：發文不再強制需要填寫 Title，版面改為無接縫的對話流，提升隨興發文的意願。
+*   **Cloudinary 無後端圖床**：結合強大的 Cloudinary API，前端可以直接將使用者選取的圖片上傳至雲端，並自動轉為 Markdown 語法 `![image](url)` 存入資料庫，無需修改後端儲存架構。
+*   **智慧解析標籤、提及與 Youtube 影片**：實作了 Regex 引擎，能自動抓取內文中的 `#關鍵字` 與 `@使用者名稱`，將其高亮顯示為主要色彩，點擊標籤還能連動上方新增加的**搜尋列 (Search Bar)** 即時過濾動態牆。如果貼上 YouTube 網址，系統還會自動將其轉換為內嵌的響應式播放器！
+*   **貼文編輯與管理**：現在你可以隨時點擊 Edit 按鈕，利用 PHP `edit_post` API 即時修改錯字或更新你的市場看法。
+*   **個人專屬主頁與自介**：點擊發文者的頭像，介面會平滑地切換至他的專屬主頁，展示他的「自我介紹 (Bio)」以及所有發布過的歷史貼文。
+
+### 4. 系統級別的深淺色切換 (Dark & Light Mode)
+為了讓網站能適應使用者的各種喜好，我們全面重構了 CSS 系統：
+*   **CSS Variables 重構**：在 `index.css` 定義了 `:root` (亮色) 與 `.dark` (暗色) 的色彩變數，如 `--background`, `--card`, `--foreground`，並在 `tailwind.config.js` 中對應。
+*   **動態主題切換**：在 Settings 面板中解鎖了主題切換功能，使用者切換時，系統會透過 React `useEffect` 動態地在 `document.documentElement` 切換 `dark` 樣式，實現真正意義上的深淺色無縫切換！
+
+---
+
+## 🚀 最新升級：財務預測儀表板、專業級 Data Studio 與 PWA 離線模式
+
+在最新的更新中，我們進一步強化了系統的專業度與實用性，使其更接近專業金融終端機的水準。
+
+### 1. 專業級 Data Studio (Excel 試算表檢視器)
+我們將原本陽春的資料表格徹底重構，升級為具有專業質感的試算表介面 (`SpreadsheetView.tsx`)：
+*   **Excel 風格操作介面**：加入了類似 Excel 的 A, B, C 直行與 1, 2, 3 橫列標籤，並實作了藍色框線的「選取狀態 (Active Cell)」。
+*   **樣式工具列與公式列**：在頂部加入了模擬的文字樣式工具列 (粗體、斜體、對齊) 與功能強大的 `ƒx` 公式/文字輸入列，讓你在網頁中也能享受原生的 Excel 編輯體驗。
+*   **無縫匯入與匯出**：結合 `xlsx` 套件，支援本地端 `.xlsx` 和 `.csv` 檔案的讀取與寫出，你的數據永遠掌握在自己手中。
+
+### 2. PWA (漸進式網頁應用) 離線模式
+為了解決使用者在沒有網路（例如通勤中）時無法查看數據的問題，我們全面導入了 PWA 離線快取機制：
+*   **Vite PWA 插件**：在 `vite.config.ts` 中配置了 `vite-plugin-pwa`，並啟用了 `workbox` 的 Aggressive Caching (積極快取) 策略，將所有的 HTML, CSS, JS 檔案與 Google 字體快取到瀏覽器。
+*   **無網路也能用**：在 `main.tsx` 中註冊了 Service Worker (`virtual:pwa-register`)。現在你可以點擊介面右上角的 Share 按鈕，將網站「加入主畫面」，它將像一個原生的手機 App 一樣在沒有網路的環境下啟動。
+
+### 3. 華爾街共識與 EPS 預測儀表板 (Earnings Forecast Dashboard)
+我們在 `AnalysisView` 中引入了一個全新的超強大組件 `EarningsForecastWidget.tsx`，幫助投資人預測公司未來的獲利能力，判斷是否值得買進：
+*   **Recharts 強大數據視覺化**：不依賴 TradingView，我們自行使用 `recharts` 打造了高質感的互動圖表。
+*   **年度財務預測 (Annual)**：使用長條圖 (BarChart) 與折線圖 (LineChart) 的組合，視覺化呈現歷史與未來的「總營收 (Revenue)」、「淨利 (Net Income)」以及最重要的「每股盈餘 (EPS)」。
+*   **單季成長趨勢 (Quarterly)**：使用漸層面積圖 (AreaChart) 追蹤單季營收，搭配折線圖顯示「營業利益率 (Operating Margin)」的變化，輕易抓出公司的成長動能。
+*   **獲利驅動力與風險分析 (Drivers & Risks)**：
+    *   利用圓餅圖 (PieChart) 拆解公司的營收來源（如硬體、服務、廣告），分析主力業務。
+    *   創新地採用雷達圖 (RadarChart) 來量化「不確定因素」與支出（如研發費用、供應鏈風險、法規限制），全面評估市場風險。
+
+---
+
+## 🌟 終極突破：建立 PHP 爬蟲代理 (Crumb Proxy) 串接 100% 真實財報
+
+為了讓 `EarningsForecastWidget` 不再只是展示演算法模擬的資料，我們突破了 Yahoo Finance 最近極度嚴格的 API 封鎖機制 (Cookie & Crumb 驗證)，成功實現了**無需付費訂閱即可獲取華爾街真實預測數據**的神級功能！
+
+### 1. 突破防爬蟲機制 (`yahoo_forecast.php`)
+Yahoo Finance 封鎖了所有的直接 API 呼叫，要求開發者必須先取得合法的 Cookie 與稱為 `crumb` 的安全權杖。
+我們在後端撰寫了一支聰明的 PHP 代理腳本：
+*   **Step 1**：透過 cURL 帶著瀏覽器的 `User-Agent` 模擬造訪首頁，偷偷把伺服器發給我們的 `Set-Cookie` 全部攔截並存起來。
+*   **Step 2**：帶著這些 Cookie 去敲門詢問 `/v1/test/getcrumb`，成功拿到這把一次性的安全鑰匙。
+*   **Step 3**：拿著鑰匙與 Cookie，正式向 `/v10/finance/quoteSummary` 請求 `earningsTrend` (未來預估)、`incomeStatementHistory` (歷史財報) 等五大核心模組，完美繞過所有防護！
+
+### 2. 真實數據驅動的 React 圖表
+我們把前端的圖表組件徹底改寫，拔除了所有的假數據生成器，改為：
+```tsx
+const res = await fetch(`/api/yahoo_forecast.php?symbol=${symbol}`);
+const data = await res.json();
+```
+現在，你看到的 2025(E) 預估營收、Forward P/E、甚至是前四年的真實歷史淨利，**全部都是真正來自華爾街分析師的最新共識！** 
+這套系統已經從一個「漂亮的前端玩具」，正式蛻變成一個「機構等級的金融分析終端機」。
 

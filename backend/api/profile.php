@@ -20,7 +20,7 @@ $db = Database::getConnection();
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     // Get user profile
-    $query = "SELECT id, email, balance FROM users WHERE id = :id";
+    $query = "SELECT id, email, balance, name, bio FROM users WHERE id = :id";
     $stmt = $db->prepare($query);
     $stmt->bindParam(":id", $user->id);
     $stmt->execute();
@@ -43,6 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         echo json_encode([
             "id" => $row['id'],
             "email" => $row['email'],
+            "name" => $row['name'],
+            "bio" => $row['bio'],
             "balance" => (float)$row['balance'],
             "watchlist" => $watchlist,
             "currency" => "USD"
@@ -53,20 +55,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Update user profile (e.g. balance)
+    // Update user profile
     $data = json_decode(file_get_contents("php://input"));
     
-    if (isset($data->balance)) {
-        $query = "UPDATE users SET balance = :balance WHERE id = :id";
+    $updates = [];
+    if (isset($data->balance)) $updates[] = "balance = :balance";
+    if (isset($data->name)) $updates[] = "name = :name";
+    if (isset($data->bio)) $updates[] = "bio = :bio";
+    
+    if (count($updates) > 0) {
+        $query = "UPDATE users SET " . implode(", ", $updates) . " WHERE id = :id";
         $stmt = $db->prepare($query);
-        $stmt->bindParam(":balance", $data->balance);
+        if (isset($data->balance)) $stmt->bindParam(":balance", $data->balance);
+        if (isset($data->name)) $stmt->bindParam(":name", $data->name);
+        if (isset($data->bio)) $stmt->bindParam(":bio", $data->bio);
         $stmt->bindParam(":id", $user->id);
         
         if ($stmt->execute()) {
-            echo json_encode(["message" => "Balance updated successfully."]);
+            echo json_encode(["message" => "Profile updated successfully."]);
         } else {
             http_response_code(500);
-            echo json_encode(["error" => "Failed to update balance."]);
+            echo json_encode(["error" => "Failed to update profile."]);
         }
     } else {
         http_response_code(400);

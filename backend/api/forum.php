@@ -23,20 +23,39 @@ $action = $_GET['action'] ?? '';
 try {
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         if ($action === 'list') {
+            $q = $_GET['q'] ?? '';
+            $tag = $_GET['tag'] ?? '';
+            
+            $whereClause = "1=1";
+            $params = [];
+            
+            if ($q) {
+                $whereClause .= " AND (p.title LIKE ? OR p.content LIKE ?)";
+                $params[] = "%$q%";
+                $params[] = "%$q%";
+            }
+            if ($tag) {
+                $whereClause .= " AND p.content LIKE ?";
+                $params[] = "%#$tag%";
+            }
+
             // Fetch posts with author name and comment count
-            $stmt = $conn->query("
-                SELECT p.id, p.title, p.content, p.likes_count, p.created_at, u.email as author,
+            $stmt = $conn->prepare("
+                SELECT p.id, p.title, p.content, p.likes_count, p.created_at, u.email as author, p.user_id,
                        (SELECT COUNT(*) FROM forum_comments WHERE post_id = p.id) as comment_count,
-                       EXISTS(SELECT 1 FROM forum_likes WHERE post_id = p.id AND user_id = {$user->id}) as user_liked
+                       EXISTS(SELECT 1 FROM forum_likes WHERE post_id = p.id AND user_id = ?) as user_liked
                 FROM forum_posts p
                 JOIN users u ON p.user_id = u.id
+                WHERE $whereClause
                 ORDER BY p.created_at DESC
             ");
+            $allParams = array_merge([$user->id], $params);
+            $stmt->execute($allParams);
             echo json_encode($stmt->fetchAll());
         } elseif ($action === 'get_post') {
             $postId = $_GET['id'] ?? 0;
             $stmt = $conn->prepare("
-                SELECT p.id, p.title, p.content, p.likes_count, p.created_at, u.email as author,
+                SELECT p.id, p.title, p.content, p.likes_count, p.created_at, u.email as author, p.user_id,
                        EXISTS(SELECT 1 FROM forum_likes WHERE post_id = p.id AND user_id = ?) as user_liked
                 FROM forum_posts p
                 JOIN users u ON p.user_id = u.id
@@ -53,7 +72,7 @@ try {
 
             // Fetch comments
             $stmt = $conn->prepare("
-                SELECT c.id, c.content, c.created_at, u.email as author
+                SELECT c.id, c.content, c.created_at, u.email as author, c.user_id
                 FROM forum_comments c
                 JOIN users u ON c.user_id = u.id
                 WHERE c.post_id = ?
@@ -64,16 +83,42 @@ try {
 
             $post['comments'] = $comments;
             echo json_encode($post);
+        } elseif ($action === 'get_user_profile') {
+            $userId = $_GET['user_id'] ?? 0;
+            $stmt = $conn->prepare("SELECT id, email, name, bio, created_at FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+            $userProfile = $stmt->fetch();
+            if (!$userProfile) {
+                http_response_code(404);
+                echo json_encode(["error" => "User not found"]);
+                exit;
+            }
+            
+            // fetch posts
+            $stmt = $conn->prepare("
+                SELECT p.id, p.title, p.content, p.likes_count, p.created_at, u.email as author, p.user_id,
+                       (SELECT COUNT(*) FROM forum_comments WHERE post_id = p.id) as comment_count,
+                       EXISTS(SELECT 1 FROM forum_likes WHERE post_id = p.id AND user_id = ?) as user_liked
+                FROM forum_posts p
+                JOIN users u ON p.user_id = u.id
+                WHERE p.user_id = ?
+                ORDER BY p.created_at DESC
+            ");
+            $stmt->execute([$user->id, $userId]);
+            $posts = $stmt->fetchAll();
+            $userProfile['posts'] = $posts;
+            
+            echo json_encode($userProfile);
         }
     } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $input = json_decode(file_get_contents("php://input"), true);
         
         if ($action === 'create') {
-            $title = $input['title'] ?? '';
+            $title = $input['title'] ?? ''; // Optional now
             $content = $input['content'] ?? '';
-            if (!$title || !$content) {
+            if (!$content) {
                 http_response_code(400);
-                echo json_encode(["error" => "Title and content required"]);
+                echo json_encode(["error" => "Content required"]);
                 exit;
             }
             $stmt = $conn->prepare("INSERT INTO forum_posts (user_id, title, content) VALUES (?, ?, ?)");
@@ -89,6 +134,38 @@ try {
             }
             $stmt = $conn->prepare("INSERT INTO forum_comments (post_id, user_id, content) VALUES (?, ?, ?)");
             $stmt->execute([$postId, $user->id, $content]);
+            echo json_encode(["success" => true]);
+        } elseif ($action === 'edit_post') {
+            $postId = $input['id'] ?? 0;
+            $content = $input['content'] ?? '';
+            if (!$postId || !$content) {
+                http_response_code(400);
+                echo json_encode(["error" => "Post ID and content required"]);
+                exit;
+            }
+            $stmt = $conn->prepare("UPDATE forum_posts SET content = ? WHERE id = ? AND user_id = ?");
+            $stmt->execute([$content, $postId, $user->id]);
+            echo json_encode(["success" => true]);
+        } elseif ($action === 'delete_post') {
+            $postId = $input['id'] ?? 0;
+            $stmt = $conn->prepare("DELETE FROM forum_posts WHERE id = ? AND user_id = ?");
+            $stmt->execute([$postId, $user->id]);
+            echo json_encode(["success" => true]);
+        } elseif ($action === 'edit_comment') {
+            $commentId = $input['id'] ?? 0;
+            $content = $input['content'] ?? '';
+            if (!$commentId || !$content) {
+                http_response_code(400);
+                echo json_encode(["error" => "Comment ID and content required"]);
+                exit;
+            }
+            $stmt = $conn->prepare("UPDATE forum_comments SET content = ? WHERE id = ? AND user_id = ?");
+            $stmt->execute([$content, $commentId, $user->id]);
+            echo json_encode(["success" => true]);
+        } elseif ($action === 'delete_comment') {
+            $commentId = $input['id'] ?? 0;
+            $stmt = $conn->prepare("DELETE FROM forum_comments WHERE id = ? AND user_id = ?");
+            $stmt->execute([$commentId, $user->id]);
             echo json_encode(["success" => true]);
         } elseif ($action === 'like') {
             $postId = $input['post_id'] ?? 0;

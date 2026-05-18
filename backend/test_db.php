@@ -17,7 +17,7 @@ foreach ($regions as $host) {
     echo "Testing $host... \n";
     $dsn = "pgsql:host=$host;port=5432;dbname=postgres;sslmode=require;connect_timeout=3";
     try {
-        $conn = //($dsn, $user, $pass);
+        $conn = new PDO($dsn, $user, $pass);
         echo "SUCCESS on $host!\n";
         break;
     } catch (PDOException $e) {

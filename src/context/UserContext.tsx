@@ -9,6 +9,7 @@ export interface UserProfile {
   phone: string;
   bank: string;
   wallet: string;
+  bio?: string;
   avatarUrl?: string; // Stored as base64 data URI
   stats: {
     balance: number;
@@ -48,8 +49,8 @@ export interface UserContextType {
 }
 
 const defaultProfile: UserProfile = {
-  name: "Alex Quant",
-  email: "alex@quanttrd.io",
+  name: "",
+  email: "guest@quanttrd.io",
   phone: "+1 (555) 123-4567",
   bank: "JPMorgan Chase",
   wallet: "0x7a...9d8E",
@@ -96,6 +97,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         setProfile(prev => ({
           ...prev,
           email: data.email,
+          name: data.name || "",
+          bio: data.bio || "",
           stats: { ...prev.stats, balance: data.balance },
           watchlist: data.watchlist || []
         }));
@@ -144,6 +147,14 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       case 'USD': default: return '$';
     }
   };
+
+  useEffect(() => {
+    if (settings.theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [settings.theme]);
 
   return (
     <UserContext.Provider value={{ profile, settings, session, loading, updateProfile, updateSettings, getCurrencySymbol, signOut }}>
