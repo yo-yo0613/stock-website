@@ -39,7 +39,11 @@ COPY --from=builder /app/dist/ /var/www/html/
 COPY backend/ /var/www/html/backend/
 
 # Install PHP dependencies (firebase/php-jwt)
+WORKDIR /var/www/html/backend
 RUN composer install --no-dev --optimize-autoloader
+
+# Back to main directory
+WORKDIR /var/www/html
 
 # Adjust permissions
 RUN chown -R www-data:www-data /var/www/html \
