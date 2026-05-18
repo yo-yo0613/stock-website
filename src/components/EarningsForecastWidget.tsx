@@ -369,7 +369,7 @@ export const EarningsForecastWidget = ({ symbol }: { symbol: string }) => {
                             <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip contentStyle={{ backgroundColor: '#1e1e2d', borderColor: '#2e2e3e', borderRadius: '8px', color: '#fff' }} itemStyle={{ color: '#fff' }} formatter={(val: number) => `${val}%`} />
+                        <Tooltip contentStyle={{ backgroundColor: '#1e1e2d', borderColor: '#2e2e3e', borderRadius: '8px', color: '#fff' }} itemStyle={{ color: '#fff' }} formatter={(val: any) => `${val}%`} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>

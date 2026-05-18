@@ -1,15 +1,15 @@
 import { useEffect, useRef, memo } from 'react';
-import { Target, TrendingUp, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { Target, TrendingUp } from 'lucide-react';
 
 export const TradingViewFinancials = memo(({ symbol, theme = 'dark' }: { symbol: string, theme?: 'dark' | 'light' }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
-    
+
     // Clear previous widget
     containerRef.current.innerHTML = '';
-    
+
     const script = document.createElement('script');
     script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-financials.js';
     script.type = 'text/javascript';
@@ -49,7 +49,7 @@ export const TradingViewFinancials = memo(({ symbol, theme = 'dark' }: { symbol:
           <div>
             <h2 className="text-xl md:text-2xl font-bold text-foreground tracking-tight">Real Financials & Forecasts</h2>
             <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
-              <span className="font-bold">{symbol}</span> &bull; 
+              <span className="font-bold">{symbol}</span> &bull;
               <span className="text-primary font-medium flex items-center gap-1"><TrendingUp size={14} /> Institutional Data via TradingView</span>
             </p>
           </div>
