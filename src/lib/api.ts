@@ -1,6 +1,10 @@
 // src/lib/api.ts
 
-const API_BASE_URL = import.meta.env.VITE_PHP_API_URL || "http://localhost:8000/api";
+const defaultApiUrl = import.meta.env.PROD
+  ? "https://stock-website-elvt.onrender.com/api"
+  : "http://localhost:8000/api";
+
+const API_BASE_URL = import.meta.env.VITE_PHP_API_URL || defaultApiUrl;
 
 export const getAuthToken = () => localStorage.getItem("jwt_token");
 export const setAuthToken = (token: string) => localStorage.setItem("jwt_token", token);
