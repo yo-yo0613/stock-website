@@ -10,7 +10,7 @@ COPY public/ ./public/
 COPY index.html ./
 
 # Install dependencies and build
-RUN npm install && npm run build
+RUN npm install --legacy-peer-deps && npm run build
 
 # Stage 2: Runtime with PHP and Apache
 FROM php:8.2-apache
