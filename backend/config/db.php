@@ -21,7 +21,9 @@ class Database {
                 // Adding options=endpoint=[project_ref] to bypass Windows PHP SNI issues with Supabase
                 $project_ref = explode('.', DB_USER)[1]; 
                 $dsn = "pgsql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";sslmode=prefer;options=endpoint=$project_ref";
-                self::$conn = new PDO($dsn, DB_USER, DB_PASS);
+                self::$conn = new PDO($dsn, DB_USER, DB_PASS, array(
+                    PDO::ATTR_PERSISTENT => true
+                ));
                 self::$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 self::$conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
             } catch(PDOException $exception) {
