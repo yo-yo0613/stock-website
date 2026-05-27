@@ -18,7 +18,7 @@ export const AuthScreen = () => {
     setMessage(null);
 
     try {
-      const endpoint = '/api/auth';
+      const endpoint = '/auth.php';
       const body = {
         action: isSignUp ? 'register' : 'login',
         email,

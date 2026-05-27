@@ -91,7 +91,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   const loadUserDataFromPHP = async () => {
     try {
-      const data = await apiFetch('/api/profile');
+      const data = await apiFetch('/profile.php');
       if (data && data.email) {
         setSession({ user: { email: data.email, id: data.id } });
         setProfile(prev => ({
@@ -119,7 +119,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     // Update balance on the PHP backend if it changed
     if (data.stats?.balance !== undefined) {
       try {
-        await apiFetch('/api/profile', {
+        await apiFetch('/profile.php', {
           method: 'POST',
           body: { balance: data.stats.balance }
         });
