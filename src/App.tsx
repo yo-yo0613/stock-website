@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+﻿import { useState, useMemo, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { Helmet, HelmetProvider } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
@@ -141,6 +141,19 @@ function AppContent() {
   const routeSymbol = searchParams.get("symbol") || "AAPL";
   const pageDescription = typeof currentRoute.description === "function" ? currentRoute.description(routeSymbol) : currentRoute.description;
   const currentUrl = `${siteUrl}${location.pathname}`;
+
+  // 1. Restore last visited route on initial load
+  useEffect(() => {
+    const lastRoute = localStorage.getItem('lastVisitedRoute');
+    if (lastRoute && location.pathname === '/' && !location.search) {
+      navigate(lastRoute, { replace: true });
+    }
+  }, []);
+
+  // 2. Save current route whenever it changes
+  useEffect(() => {
+    localStorage.setItem('lastVisitedRoute', location.pathname + location.search);
+  }, [location.pathname, location.search]);
 
   const handleNavigateAnalysis = (sym: string) => {
     navigate(`/analysis?symbol=${encodeURIComponent(sym)}`);

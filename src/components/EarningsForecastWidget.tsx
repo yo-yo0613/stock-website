@@ -28,7 +28,12 @@ class ChartErrorBoundary extends React.Component<ChartErrorBoundaryProps, ChartE
 const PIE_COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f43f5e', '#f59e0b'];
 
 export const EarningsForecastWidget = ({ symbol }: { symbol: string }) => {
-  const [activeTab, setActiveTab] = useState('Annual');
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('earningsActiveTab') || 'Annual');
+  
+  useEffect(() => {
+    localStorage.setItem('earningsActiveTab', activeTab);
+  }, [activeTab]);
+
   const tabs = ['Annual', 'Quarterly', 'Drivers & Risks'];
 
   const [apiData, setApiData] = useState<any>(null);
