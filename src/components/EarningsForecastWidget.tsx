@@ -27,6 +27,8 @@ class ChartErrorBoundary extends React.Component<ChartErrorBoundaryProps, ChartE
 //const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 const PIE_COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f43f5e', '#f59e0b'];
 
+import { quantFetch } from '../lib/api';
+
 export const EarningsForecastWidget = ({ symbol }: { symbol: string }) => {
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('earningsActiveTab') || 'Annual');
   
@@ -43,9 +45,7 @@ export const EarningsForecastWidget = ({ symbol }: { symbol: string }) => {
     const fetchRealData = async () => {
       setLoading(true);
       try {
-        const url = import.meta.env.VITE_PHP_API_URL || 'http://localhost:8000/api';
-        const res = await fetch(`${url}/yahoo_forecast.php?symbol=${symbol}`);
-        const data = await res.json();
+        const data = await quantFetch(`/api/market/forecast?symbol=${symbol}`);
         if (data.quoteSummary?.result?.[0]) {
           setApiData(data.quoteSummary.result[0]);
         }

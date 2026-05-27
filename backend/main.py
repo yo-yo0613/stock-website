@@ -105,3 +105,63 @@ def get_quote(symbol: str, market: str = "美股"):
         "success": True,
         "data": data
     }
+
+import math
+
+@app.get("/api/market/forecast")
+def get_forecast(symbol: str, market: str = "美股"):
+    sym = yf_symbol(symbol, market)
+    try:
+        tk = yf.Ticker(sym)
+        info = tk.info
+        
+        yearly = []
+        fin = tk.financials
+        if fin is not None and not fin.empty:
+            for d in reversed(fin.columns[:4]):
+                rev = fin.loc['Total Revenue', d] if 'Total Revenue' in fin.index else 0
+                net = fin.loc['Net Income', d] if 'Net Income' in fin.index else 0
+                yearly.append({
+                    'date': d.year,
+                    'revenue': {'raw': float(rev) if not math.isnan(rev) else 0},
+                    'earnings': {'raw': float(net) if not math.isnan(net) else 0}
+                })
+
+        trend = []
+        ee = tk.earnings_estimate
+        re = tk.revenue_estimate
+        if ee is not None and not ee.empty:
+            if '0y' in ee.index:
+                trend.append({
+                    'period': '+1q',
+                    'earningsEstimate': {'avg': {'raw': float(ee.loc['0y', 'avg'])}},
+                    'revenueEstimate': {'avg': {'raw': float(re.loc['0y', 'avg'])}} if re is not None and '0y' in re.index else {}
+                })
+            if '+1y' in ee.index:
+                trend.append({
+                    'period': '+1y',
+                    'earningsEstimate': {'avg': {'raw': float(ee.loc['+1y', 'avg'])}},
+                    'revenueEstimate': {'avg': {'raw': float(re.loc['+1y', 'avg'])}} if re is not None and '+1y' in re.index else {}
+                })
+
+        res = {
+            'quoteSummary': {
+                'result': [{
+                    'defaultKeyStatistics': {
+                        'forwardPE': {'raw': info.get('forwardPE', info.get('trailingPE', 15))},
+                        'trailingEps': {'raw': info.get('trailingEps', 1.0)},
+                        'forwardEps': {'raw': info.get('forwardEps', info.get('trailingEps', 1.0))}
+                    },
+                    'financialData': {
+                        'recommendationKey': info.get('recommendationKey', 'hold')
+                    },
+                    'earningsTrend': {'trend': trend},
+                    'earnings': {'financialsChart': {'yearly': yearly}}
+                }]
+            }
+        }
+        return res
+    except Exception as e:
+        print(f"Forecast Error {sym}: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Failed to generate forecast")
