@@ -82,6 +82,32 @@ def fetch_stock_data(sym: str):
         traceback.print_exc()
         return None
 
+from pydantic import BaseModel
+
+class AuthRequest(BaseModel):
+    action: str
+    email: str
+    password: str
+
+@app.post("/api/auth")
+def auth(req: AuthRequest):
+    return {"token": "mock-jwt-token-123", "message": "Success"}
+
+@app.get("/api/profile")
+def get_profile():
+    return {
+        "success": True,
+        "email": "user@quant.trd",
+        "name": "Quant User",
+        "balance": 124562.00,
+        "bio": "Quantitative Trader",
+        "watchlist": ["AAPL", "TSLA", "MSFT", "NVDA", "BTC-USD"]
+    }
+
+@app.post("/api/profile")
+def update_profile():
+    return {"success": True}
+
 @app.get("/")
 def read_root():
     return {"status": "ok", "message": "QuantTrd API is running."}

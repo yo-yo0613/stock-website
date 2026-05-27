@@ -18,7 +18,7 @@ export const AuthScreen = () => {
     setMessage(null);
 
     try {
-      const endpoint = '/auth.php';
+      const endpoint = '/api/auth';
       const body = {
         action: isSignUp ? 'register' : 'login',
         email,
@@ -71,12 +71,12 @@ export const AuthScreen = () => {
             {isSignUp ? 'Create Account' : 'Welcome Back'}
           </h2>
 
-          {import.meta.env.VITE_PHP_API_URL === undefined && (
+          {import.meta.env.VITE_API_URL === undefined && (
             <div className="bg-blue-500/10 border border-blue-500/50 text-blue-400 p-4 rounded-xl text-sm flex items-start gap-2 mb-6">
               <AlertCircle size={18} className="shrink-0 mt-0.5" />
               <div>
                 <strong className="block mb-1">Local Testing Mode</strong>
-                Connecting to local XAMPP backend by default. For production, set `VITE_PHP_API_URL`.
+                Connecting to local backend by default. For production, set `VITE_API_URL`.
               </div>
             </div>
           )}
