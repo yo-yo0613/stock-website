@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Network, Play, RefreshCw, Maximize2, Minimize2 } from "lucide-react";
 
 type GraphNode = { id: string; x: number; y: number; label: string; depth: number };

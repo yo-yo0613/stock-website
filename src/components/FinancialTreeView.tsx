@@ -3,8 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, ChevronDown, Database } from "lucide-react";
 import { apiFetch } from "../lib/api";
 
-import { apiFetch } from "../lib/api";
-
 type TreeNodeData = {
   name: string;
   value: number;
