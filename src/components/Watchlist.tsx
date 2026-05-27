@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown, Plus, X, Search } from "lucide-react";
 import { motion, type Variants } from "framer-motion";
 import { useUser } from "../context/UserContext";
-import { apiFetch } from "../lib/api";
+import { apiFetch, quantFetch } from "../lib/api";
 
 type StockData = {
   symbol: string;
@@ -50,67 +50,63 @@ export const Watchlist = ({ onNavigate }: { onNavigate?: (symbol: string) => voi
       let fetchedData: StockData[] = [];
       let fetchSuccess = false;
 
-      // 1. Try Yahoo Finance Batch Endpoint
+      // 1. Try Python Quant API (The new real backend)
       try {
-        const res = await fetch(`/api/finance/v7/finance/quote?symbols=${watchlist.join(',')}`);
-        if (res.ok) {
-          const json = await res.json();
-          if (json.quoteResponse && json.quoteResponse.result && json.quoteResponse.result.length > 0) {
-            fetchedData = json.quoteResponse.result.map((item: any) => {
-              const currentPrice = item.regularMarketPrice;
-              const changePercent = item.regularMarketChangePercent;
+        const promises = watchlist.map(async (symbol) => {
+          let cleanSymbol = symbol;
+          if (symbol === 'BTC-USD') cleanSymbol = 'BTC-USD'; // Python yfinance supports BTC-USD
+          
+          try {
+            const res = await quantFetch(`/api/market/quote?symbol=${cleanSymbol}`);
+            if (res && res.success && res.data) {
+              const currentPrice = res.data.price;
+              const changePercent = res.data.pct;
               return {
-                symbol: item.symbol,
-                name: item.shortName || item.longName || item.symbol,
+                symbol: symbol,
+                name: symbol,
                 price: `${getCurrencySymbol()}${currentPrice.toFixed(2)}`,
                 change: `${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}%`,
                 up: changePercent >= 0,
               };
-            });
-            fetchSuccess = true;
+            }
+          } catch (e) {
+            return null;
           }
+          return null;
+        });
+        const results = await Promise.all(promises);
+        const validResults = results.filter(item => item !== null) as StockData[];
+        if (validResults.length > 0) {
+          fetchedData = validResults;
+          fetchSuccess = true;
         }
       } catch (error) {
-        console.warn("Yahoo batch fetch failed, attempting fallback...", error);
+        console.warn("Python Quant API fetch failed, attempting fallback...", error);
       }
 
-      // 2. Try Finnhub Fallback
+      // 2. Fallback to Yahoo Finance Batch Endpoint if Python API fails
       if (!fetchSuccess) {
-        const finnhubKey = import.meta.env.VITE_FINNHUB_API_KEY;
-        if (finnhubKey) {
-          try {
-            const promises = watchlist.map(async (symbol) => {
-              let cleanSymbol = symbol;
-              // Basic crypto mapping for Finnhub
-              if (symbol === 'BTC-USD') cleanSymbol = 'BINANCE:BTCUSDT';
-              if (symbol === 'ETH-USD') cleanSymbol = 'BINANCE:ETHUSDT';
-              
-              const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${cleanSymbol}&token=${finnhubKey}`);
-              if (!r.ok) return null;
-              const data = await r.json();
-              if (data && data.c) {
-                const currentPrice = data.c;
-                const prevClose = data.pc;
-                const changePercent = prevClose ? ((currentPrice - prevClose) / prevClose) * 100 : 0;
+        try {
+          const res = await fetch(`/api/finance/v7/finance/quote?symbols=${watchlist.join(',')}`);
+          if (res.ok) {
+            const json = await res.json();
+            if (json.quoteResponse && json.quoteResponse.result && json.quoteResponse.result.length > 0) {
+              fetchedData = json.quoteResponse.result.map((item: any) => {
+                const currentPrice = item.regularMarketPrice;
+                const changePercent = item.regularMarketChangePercent;
                 return {
-                  symbol: symbol,
-                  name: symbol,
+                  symbol: item.symbol,
+                  name: item.shortName || item.longName || item.symbol,
                   price: `${getCurrencySymbol()}${currentPrice.toFixed(2)}`,
                   change: `${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}%`,
                   up: changePercent >= 0,
                 };
-              }
-              return null;
-            });
-            const results = await Promise.all(promises);
-            const validResults = results.filter(item => item !== null) as StockData[];
-            if (validResults.length > 0) {
-              fetchedData = validResults;
+              });
               fetchSuccess = true;
             }
-          } catch (err) {
-            console.error("Finnhub fetch failed", err);
           }
+        } catch (error) {
+          console.warn("Yahoo batch fetch failed.", error);
         }
       }
 
