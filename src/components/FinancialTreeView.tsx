@@ -13,29 +13,135 @@ type TreeNodeData = {
 // Fallback logic for when the PHP backend is unreachable (e.g. static Vercel deployment)
 const generateMockTree = (symbol: string): TreeNodeData => {
   const hash = symbol.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const baseRev = (20000 + (hash % 100) * 2000) * 1000000;
+  const baseRev = (50000 + (hash % 100) * 5000) * 1000000;
   
+  const format = (val: number) => "$" + (val / 1000000000).toFixed(2) + "B";
+
   return {
-    name: "Total Revenue",
+    name: `Financial Statements (${new Date().getFullYear()}) - ${symbol}`,
     value: baseRev,
-    fmt: "$" + (baseRev / 1000000000).toFixed(2) + "B",
+    fmt: "Comprehensive",
     children: [
       {
-        name: "Core Products",
-        value: baseRev * 0.65,
-        fmt: "$" + ((baseRev * 0.65) / 1000000000).toFixed(2) + "B",
+        name: "Income Statement",
+        value: baseRev,
+        fmt: format(baseRev),
         children: [
-          { name: "Hardware", value: baseRev * 0.4, fmt: "$" + ((baseRev * 0.4) / 1000000000).toFixed(2) + "B", children: [] },
-          { name: "Software Licenses", value: baseRev * 0.25, fmt: "$" + ((baseRev * 0.25) / 1000000000).toFixed(2) + "B", children: [] }
+          {
+            name: "Total Revenue",
+            value: baseRev,
+            fmt: format(baseRev),
+            children: [
+              { name: "Hardware & Devices", value: baseRev * 0.45, fmt: format(baseRev * 0.45), children: [] },
+              { name: "Software & Cloud", value: baseRev * 0.35, fmt: format(baseRev * 0.35), children: [] },
+              { name: "Services & Subscriptions", value: baseRev * 0.20, fmt: format(baseRev * 0.20), children: [] }
+            ]
+          },
+          {
+            name: "Cost of Revenue (COGS)",
+            value: baseRev * -0.4,
+            fmt: format(baseRev * -0.4),
+            children: [
+              { name: "Material Costs", value: baseRev * -0.25, fmt: format(baseRev * -0.25), children: [] },
+              { name: "Labor & Manufacturing", value: baseRev * -0.15, fmt: format(baseRev * -0.15), children: [] }
+            ]
+          },
+          {
+            name: "Operating Expenses",
+            value: baseRev * -0.3,
+            fmt: format(baseRev * -0.3),
+            children: [
+              { name: "Research & Development (R&D)", value: baseRev * -0.15, fmt: format(baseRev * -0.15), children: [] },
+              { name: "Sales & Marketing (S&M)", value: baseRev * -0.10, fmt: format(baseRev * -0.10), children: [] },
+              { name: "General & Admin (G&A)", value: baseRev * -0.05, fmt: format(baseRev * -0.05), children: [] }
+            ]
+          },
+          {
+            name: "Net Income",
+            value: baseRev * 0.25,
+            fmt: format(baseRev * 0.25),
+            children: []
+          }
         ]
       },
       {
-        name: "Services & Subscriptions",
-        value: baseRev * 0.35,
-        fmt: "$" + ((baseRev * 0.35) / 1000000000).toFixed(2) + "B",
+        name: "Balance Sheet",
+        value: baseRev * 2.5,
+        fmt: format(baseRev * 2.5),
         children: [
-          { name: "Cloud Services", value: baseRev * 0.2, fmt: "$" + ((baseRev * 0.2) / 1000000000).toFixed(2) + "B", children: [] },
-          { name: "Support & Maintenance", value: baseRev * 0.15, fmt: "$" + ((baseRev * 0.15) / 1000000000).toFixed(2) + "B", children: [] }
+          {
+            name: "Total Assets",
+            value: baseRev * 2.5,
+            fmt: format(baseRev * 2.5),
+            children: [
+              {
+                name: "Current Assets",
+                value: baseRev * 1.0,
+                fmt: format(baseRev * 1.0),
+                children: [
+                  { name: "Cash & Equivalents", value: baseRev * 0.6, fmt: format(baseRev * 0.6), children: [] },
+                  { name: "Short-term Investments", value: baseRev * 0.2, fmt: format(baseRev * 0.2), children: [] },
+                  { name: "Inventory", value: baseRev * 0.2, fmt: format(baseRev * 0.2), children: [] }
+                ]
+              },
+              {
+                name: "Non-Current Assets",
+                value: baseRev * 1.5,
+                fmt: format(baseRev * 1.5),
+                children: [
+                  { name: "Property, Plant & Equipment", value: baseRev * 0.8, fmt: format(baseRev * 0.8), children: [] },
+                  { name: "Intangible Assets & Goodwill", value: baseRev * 0.7, fmt: format(baseRev * 0.7), children: [] }
+                ]
+              }
+            ]
+          },
+          {
+            name: "Total Liabilities",
+            value: baseRev * 1.2,
+            fmt: format(baseRev * 1.2),
+            children: [
+              {
+                name: "Current Liabilities",
+                value: baseRev * 0.5,
+                fmt: format(baseRev * 0.5),
+                children: [
+                  { name: "Accounts Payable", value: baseRev * 0.3, fmt: format(baseRev * 0.3), children: [] },
+                  { name: "Short-term Debt", value: baseRev * 0.2, fmt: format(baseRev * 0.2), children: [] }
+                ]
+              },
+              {
+                name: "Long-term Debt",
+                value: baseRev * 0.7,
+                fmt: format(baseRev * 0.7),
+                children: []
+              }
+            ]
+          },
+          {
+            name: "Shareholders' Equity",
+            value: baseRev * 1.3,
+            fmt: format(baseRev * 1.3),
+            children: [
+              { name: "Retained Earnings", value: baseRev * 1.0, fmt: format(baseRev * 1.0), children: [] },
+              { name: "Common Stock", value: baseRev * 0.3, fmt: format(baseRev * 0.3), children: [] }
+            ]
+          }
+        ]
+      },
+      {
+        name: "Cash Flow Statement",
+        value: baseRev * 0.3,
+        fmt: format(baseRev * 0.3),
+        children: [
+          { name: "Operating Cash Flow", value: baseRev * 0.4, fmt: format(baseRev * 0.4), children: [] },
+          { name: "Investing Cash Flow", value: baseRev * -0.15, fmt: format(baseRev * -0.15), children: [
+            { name: "Capital Expenditures (CapEx)", value: baseRev * -0.1, fmt: format(baseRev * -0.1), children: [] },
+            { name: "Strategic Acquisitions", value: baseRev * -0.05, fmt: format(baseRev * -0.05), children: [] }
+          ] },
+          { name: "Financing Cash Flow", value: baseRev * 0.05, fmt: format(baseRev * 0.05), children: [
+            { name: "Stock Repurchases", value: baseRev * -0.05, fmt: format(baseRev * -0.05), children: [] },
+            { name: "Debt Issuance", value: baseRev * 0.1, fmt: format(baseRev * 0.1), children: [] }
+          ] }
         ]
       }
     ]
