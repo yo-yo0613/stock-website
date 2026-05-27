@@ -21,7 +21,10 @@ app.add_middleware(
 )
 
 def yf_symbol(code: str, market: str):
-    return code + ".TW" if market == "台股" else code
+    code = str(code).strip().upper()
+    if market == "台股" or (code.isdigit() and len(code) == 4):
+        return code + ".TW"
+    return code
 
 def calc_rsi(prices, period=14):
     if len(prices) < period + 1:

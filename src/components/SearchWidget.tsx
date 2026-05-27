@@ -102,20 +102,17 @@ export const SearchWidget = () => {
     const watchlist = profile.watchlist || [];
     if (!watchlist.includes(symbol)) {
       setAddedSymbols(prev => new Set(prev).add(symbol));
+      
+      // Optimistic UI Update
+      await updateProfile({ watchlist: [...watchlist, symbol] });
+      
       try {
         await apiFetch('/watchlist.php', {
           method: 'POST',
           body: { symbol }
         });
-        await updateProfile({ watchlist: [...watchlist, symbol] });
       } catch (error) {
-        console.error("Failed to add to watchlist via PHP API", error);
-        // Revert UI optimistic state on failure
-        setAddedSymbols(prev => {
-          const next = new Set(prev);
-          next.delete(symbol);
-          return next;
-        });
+        console.warn("Failed to sync new symbol to PHP API. It is only saved locally.", error);
       }
     }
   };

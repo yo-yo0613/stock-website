@@ -130,14 +130,18 @@ export const Watchlist = ({ onNavigate }: { onNavigate?: (symbol: string) => voi
     
     setNewSymbol(""); // Clear immediately for better UX
     setAdding(true);
+    
+    // Optimistic UI Update: Update context first so it shows instantly!
+    const newWatchlist = [...watchlist, sym];
+    await updateProfile({ watchlist: newWatchlist });
+    
     try {
       await apiFetch('/watchlist.php', {
         method: 'POST',
         body: { symbol: sym }
       });
-      await updateProfile({ watchlist: [...watchlist, sym] });
     } catch (err) {
-      console.error("Failed to add symbol via PHP API", err);
+      console.warn("Failed to sync new symbol to PHP backend. It is only saved locally for now.", err);
     } finally {
       setAdding(false);
     }
@@ -145,14 +149,15 @@ export const Watchlist = ({ onNavigate }: { onNavigate?: (symbol: string) => voi
 
   const handleRemove = async (e: React.MouseEvent, symToRemove: string) => {
     e.stopPropagation();
+    // Optimistic UI Update
+    await updateProfile({ watchlist: watchlist.filter(s => s !== symToRemove) });
     try {
       await apiFetch('/watchlist.php', {
         method: 'DELETE',
         body: { symbol: symToRemove }
       });
-      await updateProfile({ watchlist: watchlist.filter(s => s !== symToRemove) });
     } catch (err) {
-      console.error("Failed to remove symbol via PHP API", err);
+      console.warn("Failed to remove symbol via PHP API", err);
     }
   };
 
