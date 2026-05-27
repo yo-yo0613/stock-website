@@ -1,22 +1,17 @@
-import { Wallet, ArrowUpRight, Activity, Edit2, Check, X } from "lucide-react";
+import { Wallet, ArrowUpRight, Building2, Briefcase, Landmark } from "lucide-react";
 import { useUser } from "../context/UserContext";
-import { useState } from "react";
+import { useTransactions } from "../context/TransactionContext";
 
 export const PortfolioStats = () => {
-  const { getCurrencySymbol, profile, updateProfile } = useUser();
-  const [isEditing, setIsEditing] = useState(false);
-  const [balance, setBalance] = useState(profile.stats?.balance || 124562);
-  const [profit, setProfit] = useState(profile.stats?.profit || 12.5);
+  const { getCurrencySymbol, profile } = useUser();
+  const { totalBalance, cashBalance, portfolioValue, addTransaction } = useTransactions();
 
-  const handleSave = () => {
-    updateProfile({
-      stats: {
-        ...profile.stats,
-        balance: Number(balance) || 0,
-        profit: Number(profit) || 0
-      }
+  const handleDeposit = () => {
+    addTransaction({
+      type: 'DEPOSIT',
+      amount: 100000,
+      asset: 'USD'
     });
-    setIsEditing(false);
   };
   
   return (
@@ -28,62 +23,51 @@ export const PortfolioStats = () => {
           </div>
           <h3 className="text-foreground font-medium">Total Balance</h3>
         </div>
-        {!isEditing ? (
-          <button onClick={() => setIsEditing(true)} className="opacity-0 group-hover:opacity-100 p-1.5 text-muted-foreground hover:text-foreground bg-neutral-800 rounded transition-all">
-            <Edit2 size={14} />
-          </button>
-        ) : (
-          <div className="flex gap-2">
-            <button onClick={handleSave} className="p-1 text-success hover:bg-success/20 rounded transition-colors"><Check size={16} /></button>
-            <button onClick={() => setIsEditing(false)} className="p-1 text-red-500 hover:bg-red-500/20 rounded transition-colors"><X size={16} /></button>
-          </div>
-        )}
+        
+        <button 
+          onClick={handleDeposit}
+          className="opacity-0 group-hover:opacity-100 flex items-center gap-1.5 px-3 py-1.5 bg-success/20 text-success hover:bg-success hover:text-white rounded-lg transition-all text-xs font-semibold border border-success/30"
+          title="Simulate Bank Deposit"
+        >
+          <Landmark size={14} />
+          <span>Connect Bank</span>
+        </button>
       </div>
 
       <div className="flex-1 flex flex-col justify-center">
-        {isEditing ? (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">{getCurrencySymbol()}</span>
-              <input 
-                type="number" 
-                value={balance} 
-                onChange={(e) => setBalance(Number(e.target.value))}
-                className="bg-card-hover text-2xl font-bold text-foreground border border-border outline-none rounded p-1 w-full" 
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="flex items-center text-success bg-success/10 px-2 py-1 rounded text-xs font-semibold">
-                <ArrowUpRight size={14} className="mr-1" />
-                <input 
-                  type="number" 
-                  value={profit} 
-                  onChange={(e) => setProfit(Number(e.target.value))}
-                  className="bg-transparent text-success outline-none w-16" 
-                /> %
-              </span>
-            </div>
+        <div>
+          <h1 className="text-4xl font-bold text-foreground tracking-tight">
+            {getCurrencySymbol()}{totalBalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+          </h1>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="flex items-center text-success bg-success/10 px-2 py-1 rounded text-xs font-semibold">
+              <ArrowUpRight size={14} className="mr-1" />
+              +{(profile.stats?.profit || 12.5).toFixed(1)}%
+            </span>
+            <span className="text-muted-foreground text-sm">vs last month</span>
           </div>
-        ) : (
-          <div>
-            <h1 className="text-4xl font-bold text-foreground tracking-tight">{getCurrencySymbol()}{(profile.stats?.balance || 124562).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h1>
-            <div className="flex items-center gap-2 mt-2">
-              <span className="flex items-center text-success bg-success/10 px-2 py-1 rounded text-xs font-semibold">
-                <ArrowUpRight size={14} className="mr-1" />
-                +{(profile.stats?.profit || 12.5).toFixed(1)}%
-              </span>
-              <span className="text-muted-foreground text-sm">vs last month</span>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
 
-      <div className="flex items-center justify-between mt-6 p-3 bg-card-hover rounded-xl border border-border">
-        <div className="flex items-center gap-3">
-          <Activity size={18} className="text-primary" />
-          <span className="text-sm font-medium text-muted-foreground">Active Positions</span>
+      <div className="grid grid-cols-2 gap-3 mt-6">
+        <div className="flex items-center justify-between p-3 bg-card-hover rounded-xl border border-border">
+          <div className="flex items-center gap-3">
+            <Building2 size={18} className="text-blue-500" />
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Cash</span>
+              <span className="text-sm font-bold text-foreground">{getCurrencySymbol()}{cashBalance.toLocaleString()}</span>
+            </div>
+          </div>
         </div>
-        <span className="text-foreground font-bold">{profile.stats?.positions || 14}</span>
+        <div className="flex items-center justify-between p-3 bg-card-hover rounded-xl border border-border">
+          <div className="flex items-center gap-3">
+            <Briefcase size={18} className="text-purple-500" />
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Portfolio</span>
+              <span className="text-sm font-bold text-foreground">{getCurrencySymbol()}{portfolioValue.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

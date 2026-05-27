@@ -7,6 +7,7 @@ import { StockChart } from "./components/StockChart";
 import { Watchlist } from "./components/Watchlist";
 import { SearchWidget } from "./components/SearchWidget";
 import { PortfolioStats } from "./components/PortfolioStats";
+import { TransactionHistory } from "./components/TransactionHistory";
 import { MarketsView, AlertsView, SettingsView, ProfileView, AnalysisView, NewsView } from "./components/Views";
 import { SpreadsheetView } from "./components/SpreadsheetView";
 import { ForumView } from "./components/ForumView";
@@ -110,6 +111,12 @@ const DashboardView = ({ onNavigate }: { onNavigate: (symbol: string) => void })
       description: "Live performance metrics for your portfolio.",
       header: <PortfolioStats />,
       className: "md:col-span-1",
+    },
+    {
+      title: "Transaction Log",
+      description: "Recent account activity and trading history.",
+      header: <TransactionHistory />,
+      className: "md:col-span-2",
     },
     {
       title: "Quick Search",
