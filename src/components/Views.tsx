@@ -373,6 +373,8 @@ export const ProfileView = () => {
 
 import { AdvancedRealTimeChart, CompanyProfile, SymbolInfo, FundamentalData } from "react-ts-tradingview-widgets";
 import { EarningsForecastWidget } from "./EarningsForecastWidget";
+import { FinancialTreeView } from "./FinancialTreeView";
+import { CorrelationGraph } from "./CorrelationGraph";
 
 export const AnalysisView = ({ symbol }: { symbol: string }) => {
   return (
@@ -381,6 +383,11 @@ export const AnalysisView = ({ symbol }: { symbol: string }) => {
       animate={{ opacity: 1, y: 0 }}
       className="w-full flex flex-col gap-6"
     >
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <FinancialTreeView symbol={symbol} />
+        <CorrelationGraph symbol={symbol} />
+      </div>
+
       <EarningsForecastWidget symbol={symbol} />
 
       <div className="bg-card border border-border rounded-2xl p-4 shadow-sm min-h-[70vh] h-[80vh] lg:h-[85vh] flex flex-col">
