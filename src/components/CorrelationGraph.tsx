@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Network, Play, RefreshCw } from "lucide-react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Network, Play, RefreshCw, Maximize2, Minimize2 } from "lucide-react";
 
 type GraphNode = { id: string; x: number; y: number; label: string; depth: number };
 type GraphEdge = { source: string; target: string };
@@ -10,6 +10,16 @@ export const CorrelationGraph = ({ symbol }: { symbol: string }) => {
   const [edges, setEdges] = useState<GraphEdge[]>([]);
   const [running, setRunning] = useState(false);
   const [hasRun, setHasRun] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsExpanded(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const runBFS = async (startSymbol: string) => {
     setRunning(true);
@@ -84,22 +94,42 @@ export const CorrelationGraph = ({ symbol }: { symbol: string }) => {
     setRunning(false);
   };
 
+  const containerClasses = isExpanded 
+    ? "fixed inset-4 z-[200] bg-card border-2 border-primary/50 shadow-2xl rounded-2xl p-6 flex flex-col overflow-hidden" 
+    : "bg-card border border-border rounded-2xl p-6 shadow-sm min-h-[450px] flex flex-col relative overflow-hidden";
+
   return (
-    <div className="bg-card border border-border rounded-2xl p-6 shadow-sm min-h-[450px] flex flex-col relative overflow-hidden">
+    <>
+    {/* Placeholder to prevent layout shift when expanded */}
+    {isExpanded && <div className="min-h-[450px] w-full rounded-2xl border border-dashed border-border/50 bg-card-hover/20" />}
+    
+    <motion.div 
+      layout
+      className={containerClasses}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+    >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 z-10 gap-4">
         <div className="flex items-center gap-3 text-primary">
           <Network className="text-purple-500" />
           <h2 className="text-xl font-bold text-foreground">Market Correlation (BFS)</h2>
         </div>
-        
-        <button 
-          onClick={() => runBFS(symbol)}
-          disabled={running}
-          className="flex items-center justify-center gap-2 bg-purple-500/20 text-purple-400 hover:bg-purple-500 hover:text-white border border-purple-500/30 px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
-        >
-          {running ? <RefreshCw size={18} className="animate-spin" /> : <Play size={18} />}
-          {running ? "Crawling Network..." : hasRun ? "Re-run BFS Crawler" : "Start BFS Crawler"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => runBFS(symbol)}
+            disabled={running}
+            className="flex items-center justify-center gap-2 bg-purple-500/20 text-purple-400 hover:bg-purple-500 hover:text-white border border-purple-500/30 px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+          >
+            {running ? <RefreshCw size={18} className="animate-spin" /> : <Play size={18} />}
+            {running ? "Crawling..." : hasRun ? "Re-run" : "Start BFS"}
+          </button>
+          <button 
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center justify-center p-2 bg-card-hover hover:bg-muted text-muted-foreground hover:text-foreground border border-border rounded-lg transition-colors"
+            title={isExpanded ? "Minimize" : "Expand Fullscreen"}
+          >
+            {isExpanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 w-full bg-[#0a0a0f] rounded-xl border border-border/50 relative overflow-hidden flex items-center justify-center">
@@ -162,6 +192,7 @@ export const CorrelationGraph = ({ symbol }: { symbol: string }) => {
           ))}
         </svg>
       </div>
-    </div>
+    </motion.div>
+    </>
   );
 };
