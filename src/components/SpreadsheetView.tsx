@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import * as xlsx from 'xlsx';
-import { Upload, FileSpreadsheet, Download, RefreshCw, Bold, Italic, AlignLeft, AlignCenter, AlignRight, Type } from 'lucide-react';
+import { Upload, FileSpreadsheet, Download, RefreshCw, Bold, Italic, AlignLeft, AlignCenter, AlignRight, Type, Undo, Redo } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const SpreadsheetView = () => {
@@ -8,6 +8,11 @@ export const SpreadsheetView = () => {
   const [cols, setCols] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeCell, setActiveCell] = useState<{r: number, c: number} | null>(null);
+  
+  type CellDiff = {r: number, c: number, oldVal: string, newVal: string};
+  const [undoStack, setUndoStack] = useState<CellDiff[]>([]);
+  const [redoStack, setRedoStack] = useState<CellDiff[]>([]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,10 +38,42 @@ export const SpreadsheetView = () => {
   };
 
   const handleCellChange = (rowIndex: number, colIndex: number, value: string) => {
+    const oldVal = data[rowIndex]?.[colIndex] || '';
+    if (oldVal === value) return; // Skip if no actual change
+
+    setUndoStack(prev => [...prev, {r: rowIndex, c: colIndex, oldVal, newVal: value}]);
+    setRedoStack([]); // Clear redo stack on new action
+
     const newData = [...data];
     if (!newData[rowIndex]) newData[rowIndex] = [];
     newData[rowIndex][colIndex] = value;
     setData(newData);
+  };
+
+  const handleUndo = () => {
+    if (undoStack.length === 0) return;
+    const lastAction = undoStack[undoStack.length - 1];
+    setUndoStack(prev => prev.slice(0, -1)); // pop
+    setRedoStack(prev => [...prev, lastAction]); // push to redo
+
+    const newData = [...data];
+    if (!newData[lastAction.r]) newData[lastAction.r] = [];
+    newData[lastAction.r][lastAction.c] = lastAction.oldVal;
+    setData(newData);
+    setActiveCell({r: lastAction.r, c: lastAction.c});
+  };
+
+  const handleRedo = () => {
+    if (redoStack.length === 0) return;
+    const nextAction = redoStack[redoStack.length - 1];
+    setRedoStack(prev => prev.slice(0, -1)); // pop
+    setUndoStack(prev => [...prev, nextAction]); // push back to undo
+
+    const newData = [...data];
+    if (!newData[nextAction.r]) newData[nextAction.r] = [];
+    newData[nextAction.r][nextAction.c] = nextAction.newVal;
+    setData(newData);
+    setActiveCell({r: nextAction.r, c: nextAction.c});
   };
 
   const exportFile = () => {
@@ -86,6 +123,10 @@ export const SpreadsheetView = () => {
       {/* Formatting Toolbar (Mock for Visual Professionalism) */}
       <div className="flex items-center gap-1 sm:gap-2 px-3 py-2 bg-background border-b border-border overflow-x-auto hide-scrollbar">
         <div className="flex items-center gap-1 pr-2 border-r border-border">
+          <button onClick={handleUndo} disabled={undoStack.length === 0} className="p-1.5 hover:bg-card-hover rounded text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:hover:bg-transparent"><Undo size={16} /></button>
+          <button onClick={handleRedo} disabled={redoStack.length === 0} className="p-1.5 hover:bg-card-hover rounded text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:hover:bg-transparent"><Redo size={16} /></button>
+        </div>
+        <div className="flex items-center gap-1 px-2 border-r border-border">
           <button className="p-1.5 hover:bg-card-hover rounded text-muted-foreground hover:text-foreground transition-colors"><Bold size={16} /></button>
           <button className="p-1.5 hover:bg-card-hover rounded text-muted-foreground hover:text-foreground transition-colors"><Italic size={16} /></button>
           <button className="p-1.5 hover:bg-card-hover rounded text-muted-foreground hover:text-foreground transition-colors"><Type size={16} /></button>

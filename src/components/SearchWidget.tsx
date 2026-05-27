@@ -3,6 +3,48 @@ import { Search, Plus, Check } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import { apiFetch } from "../lib/api";
 
+const LOCAL_TICKERS = [
+  "AAPL", "ABBV", "ABT", "ACN", "ADBE", "AMD", "AMZN", "AVGO", "BAC", "BRK-B", 
+  "CMCSA", "COST", "CRM", "CSCO", "CVX", "DIS", "GOOG", "GOOGL", "HD", "HON", 
+  "INTC", "JNJ", "JPM", "KO", "LIN", "LLY", "MA", "MCD", "META", "MRK", 
+  "MSFT", "NEE", "NFLX", "NKE", "NVDA", "ORCL", "PEP", "PFE", "PG", "PM", 
+  "QCOM", "T", "TMO", "TSLA", "TXN", "UNH", "UPS", "V", "VZ", "WFC", "WMT", "XOM"
+].sort();
+
+// O(log n) Binary Search for ultra-fast autocomplete
+const binarySearchPrefix = (arr: string[], target: string) => {
+  let left = 0;
+  let right = arr.length - 1;
+  const upperTarget = target.toUpperCase();
+  
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    const midVal = arr[mid];
+    
+    if (midVal.startsWith(upperTarget)) {
+      const matches = [];
+      let i = mid;
+      while (i >= 0 && arr[i].startsWith(upperTarget)) {
+        matches.unshift(arr[i]);
+        i--;
+      }
+      let j = mid + 1;
+      while (j < arr.length && arr[j].startsWith(upperTarget)) {
+        matches.push(arr[j]);
+        j++;
+      }
+      return matches;
+    }
+    
+    if (midVal < upperTarget) {
+      left = mid + 1;
+    } else {
+      right = mid - 1;
+    }
+  }
+  return [];
+};
+
 export const SearchWidget = () => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
@@ -17,12 +59,33 @@ export const SearchWidget = () => {
         setSearching(false);
         return;
       }
+      // 1. Instant local binary search (O(log n))
+      const localMatches = binarySearchPrefix(LOCAL_TICKERS, query);
+      const localResults = localMatches.map(sym => ({
+        symbol: sym,
+        shortname: 'O(log n) Local Cache',
+        quoteType: 'EQUITY',
+        isLocal: true
+      }));
+      
+      // Show immediately for zero latency
+      if (localResults.length > 0) {
+        setResults(localResults);
+      }
+
       setSearching(true);
+      // 2. Fetch full results from API
       try {
         const res = await fetch(`/api/finance/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=5`);
         const json = await res.json();
         if (json.quotes) {
-          setResults(json.quotes);
+          const merged = [...localResults];
+          json.quotes.forEach((apiItem: any) => {
+            if (!merged.find(m => m.symbol === apiItem.symbol)) {
+              merged.push(apiItem);
+            }
+          });
+          setResults(merged.slice(0, 6)); // keep top 6
         }
       } catch (err) {
         console.error("Search failed", err);
@@ -86,9 +149,10 @@ export const SearchWidget = () => {
               <div key={`${item.symbol}-${idx}`} className="flex items-center justify-between p-3 hover:bg-neutral-800/50 border-b border-border last:border-0 transition-colors">
                 <div className="flex flex-col">
                   <span className="text-foreground font-bold">{item.symbol}</span>
-                  <span className="text-xs text-muted-foreground truncate max-w-[200px]">{item.shortname || item.longname}</span>
+                  <span className={`text-xs truncate max-w-[200px] ${item.isLocal ? 'text-success font-semibold' : 'text-muted-foreground'}`}>{item.shortname || item.longname}</span>
                 </div>
                 <div className="flex items-center gap-3">
+                  {item.isLocal && <span className="text-[10px] bg-success/20 text-success px-2 py-1 rounded-full animate-pulse border border-success/30">Binary Search</span>}
                   <span className="text-[10px] uppercase tracking-wider px-2 py-1 bg-neutral-800 rounded text-muted-foreground">{item.quoteType}</span>
                   <button 
                     onClick={() => handleAdd(item.symbol)}

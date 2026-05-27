@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { Helmet, HelmetProvider } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
@@ -142,6 +142,32 @@ function AppContent() {
   const pageDescription = typeof currentRoute.description === "function" ? currentRoute.description(routeSymbol) : currentRoute.description;
   const currentUrl = `${siteUrl}${location.pathname}`;
 
+  // Notification Queue (FIFO)
+  const [notificationQueue, setNotificationQueue] = useState<{id: number, msg: string}[]>([]);
+  const [currentNotification, setCurrentNotification] = useState<{id: number, msg: string} | null>(null);
+
+  const triggerTestAlerts = () => {
+    const newAlerts = Array.from({length: 5}).map((_, i) => ({
+      id: Date.now() + i,
+      msg: `Market Alert: High volume detected - Event ${i+1}`
+    }));
+    setNotificationQueue(prev => [...prev, ...newAlerts]);
+  };
+
+  useEffect(() => {
+    if (currentNotification) {
+      const timer = setTimeout(() => {
+        setCurrentNotification(null);
+      }, 1500); // Show each for 1.5s
+      return () => clearTimeout(timer);
+    } else if (notificationQueue.length > 0) {
+      // Shift from the front of the queue
+      const nextAlert = notificationQueue[0];
+      setNotificationQueue(prev => prev.slice(1));
+      setCurrentNotification(nextAlert);
+    }
+  }, [currentNotification, notificationQueue]);
+
   // 1. Restore last visited route on initial load
   useEffect(() => {
     const lastRoute = localStorage.getItem('lastVisitedRoute');
@@ -264,12 +290,35 @@ function AppContent() {
           </button>
         </div>
 
-        <header className="flex flex-col mb-8 pr-12">
+        <header className="flex flex-col mb-8 pr-12 relative">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{currentRoute.label}</h1>
             <p className="text-muted-foreground mt-1">{pageDescription}</p>
           </div>
+          <button onClick={triggerTestAlerts} className="absolute right-0 top-0 bg-yellow-500/20 text-yellow-500 px-3 py-2 rounded-lg text-sm border border-yellow-500/50 hover:bg-yellow-500 hover:text-black transition-colors font-bold">
+            Test Queue
+          </button>
         </header>
+
+        <AnimatePresence>
+          {currentNotification && (
+            <motion.div
+              key="notification-toast"
+              initial={{ opacity: 0, y: -50, scale: 0.9, x: '-50%' }}
+              animate={{ opacity: 1, y: 0, scale: 1, x: '-50%' }}
+              exit={{ opacity: 0, scale: 0.9, y: -20, x: '-50%' }}
+              className="fixed top-6 left-1/2 z-[100] bg-card border-2 border-yellow-500/80 shadow-2xl px-6 py-4 rounded-2xl flex items-center gap-4 min-w-[300px]"
+            >
+              <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center shrink-0">
+                <Bell className="text-yellow-500" size={20} />
+              </div>
+              <div>
+                <p className="text-yellow-500 font-bold text-xs uppercase tracking-widest mb-1">Queue Active ({notificationQueue.length} pending)</p>
+                <p className="text-foreground font-medium">{currentNotification.msg}</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <RouteMeta title={currentRoute.title} description={pageDescription} url={currentUrl} image={`${siteUrl}/quantTrd.png`} />
 

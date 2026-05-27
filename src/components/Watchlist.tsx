@@ -34,6 +34,8 @@ export const Watchlist = ({ onNavigate }: { onNavigate?: (symbol: string) => voi
   const [loading, setLoading] = useState(true);
   const [newSymbol, setNewSymbol] = useState("");
   const [adding, setAdding] = useState(false);
+  const [sortConfig, setSortConfig] = useState<{key: 'symbol' | 'price' | 'change', direction: 'asc' | 'desc'} | null>(null);
+  
   const { getCurrencySymbol, profile, updateProfile } = useUser();
   const watchlist = profile.watchlist || ["AAPL", "TSLA", "MSFT", "NVDA", "BTC-USD"];
 
@@ -158,6 +160,34 @@ export const Watchlist = ({ onNavigate }: { onNavigate?: (symbol: string) => voi
     }
   };
 
+  const sortedData = [...data].sort((a, b) => {
+    if (!sortConfig) return 0;
+    
+    let aValue: any = a[sortConfig.key];
+    let bValue: any = b[sortConfig.key];
+    
+    // Parse numeric values for price and change
+    if (sortConfig.key === 'price') {
+      aValue = parseFloat(a.price.replace(/[^0-9.-]+/g,""));
+      bValue = parseFloat(b.price.replace(/[^0-9.-]+/g,""));
+    } else if (sortConfig.key === 'change') {
+      aValue = parseFloat(a.change.replace(/[^0-9.-]+/g,""));
+      bValue = parseFloat(b.change.replace(/[^0-9.-]+/g,""));
+    }
+
+    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const requestSort = (key: 'symbol' | 'price' | 'change') => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
   return (
     <div className="w-full h-full flex flex-col">
       <form onSubmit={handleAdd} className="mb-4 flex items-center gap-2 relative z-10">
@@ -176,6 +206,19 @@ export const Watchlist = ({ onNavigate }: { onNavigate?: (symbol: string) => voi
         </button>
       </form>
 
+      <div className="flex items-center gap-2 mb-2 px-1">
+        <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider mr-2">Sort by:</span>
+        <button onClick={() => requestSort('symbol')} className={`text-[10px] px-2 py-1 rounded-full transition-colors ${sortConfig?.key === 'symbol' ? 'bg-primary text-black' : 'bg-card-hover text-muted-foreground hover:bg-border'}`}>
+          Symbol {sortConfig?.key === 'symbol' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+        </button>
+        <button onClick={() => requestSort('price')} className={`text-[10px] px-2 py-1 rounded-full transition-colors ${sortConfig?.key === 'price' ? 'bg-primary text-black' : 'bg-card-hover text-muted-foreground hover:bg-border'}`}>
+          Price {sortConfig?.key === 'price' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+        </button>
+        <button onClick={() => requestSort('change')} className={`text-[10px] px-2 py-1 rounded-full transition-colors ${sortConfig?.key === 'change' ? 'bg-primary text-black' : 'bg-card-hover text-muted-foreground hover:bg-border'}`}>
+          Change {sortConfig?.key === 'change' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+        </button>
+      </div>
+
       <div className="flex-1 overflow-y-auto pr-2 -mr-2">
         {loading && data.length === 0 ? (
           <div className="flex justify-center items-center h-full">
@@ -188,7 +231,7 @@ export const Watchlist = ({ onNavigate }: { onNavigate?: (symbol: string) => voi
             animate="visible"
             className="flex flex-col gap-2 pb-2"
           >
-            {data.map((item) => (
+            {sortedData.map((item) => (
               <motion.div
                 key={item.symbol}
                 variants={itemVariants}
