@@ -580,3 +580,58 @@ const data = await res.json();
 現在，你看到的 2025(E) 預估營收、Forward P/E、甚至是前四年的真實歷史淨利，**全部都是真正來自華爾街分析師的最新共識！** 
 這套系統已經從一個「漂亮的前端玩具」，正式蛻變成一個「機構等級的金融分析終端機」。
 
+---
+
+## 🐍 巔峰架構：導入 Python FastAPI 建立雙後端微服務 (Microservices)
+
+隨著我們對金融數據的要求越來越高（例如即時量化運算、RSI 技術指標、突破 Yahoo Finance 的進階反爬蟲鎖定），單靠 PHP 處理所有事情已經不是業界的最佳實務。
+我們為專案導入了當前矽谷最主流的 **「雙後端微服務架構 (Microservices)」**：
+
+### 1. 職責分離：PHP 管會員，Python 管金融
+*   **PHP (網頁管理員)**：負責處理 `auth.php` 與 `profile.php`。使用 JWT 簽發憑證，守護會員登入、個人資料與帳戶餘額。
+*   **Python (量化運算大腦)**：我們在 `backend/main.py` 建立了一個輕量級且極速的 **FastAPI** 伺服器，專門處理即時股價 (`/api/market/quote`) 與分析師預估 (`/api/market/forecast`)。
+
+在前端 `src/lib/api.ts` 中，我們定義了兩個不同的抓取函數：
+```typescript
+const PHP_API_BASE = import.meta.env.VITE_PHP_API_URL;
+const PYTHON_API_BASE = import.meta.env.VITE_PYTHON_API_URL;
+
+// 預設打向 PHP (處理會員認證，帶 JWT Token)
+export const apiFetch = async (endpoint, options) => { ... }
+
+// 專門打向 Python (處理純粹的金融運算，極速回傳)
+export const quantFetch = async (endpoint, options) => { ... }
+```
+這樣的前端架構完美實現了「分流」，不僅讓系統效能最大化，也大幅降低單一伺服器過載的風險！
+
+### 2. Python `yfinance` 暴力突破與台股智慧偵測
+Yahoo Finance 最近的 Cookie/Crumb 阻擋機制讓全世界的 PHP 爬蟲哀鴻遍野，但 Python 的神級套件 `yfinance` 透過社群的持續更新，天生自帶了自動破解與輪替機制！
+我們不僅利用 `yfinance` 抓取真實的華爾街 EPS 預測，更實作了貼心的**台股智慧偵測 (Auto-Detect)**：
+```python
+def yf_symbol(code: str, market: str):
+    code = str(code).strip().upper()
+    # 自動偵測：如果輸入的是 4 個數字 (如 2330, 2317)，自動補上 .TW 轉換為台股代碼
+    if market == "台股" or (code.isdigit() and len(code) == 4):
+        return code + ".TW"
+    return code
+```
+現在，使用者在前端的 Watchlist 搜尋框只要直覺地輸入 `2330`，系統就會自動將其轉換為 `2330.TW` 並向 Python 發送請求，無縫獲取台積電的即時盤中報價與漲跌幅！
+
+### 3. 樂觀 UI (Optimistic UI) 帶來零延遲操作手感
+在現代化的高階 App 中，如果按了「新增自選股」還要看著載入圈圈轉個 1 秒鐘，體驗就會大打折扣。
+我們在 `Watchlist.tsx` 中導入了極致的 **樂觀 UI 更新 (Optimistic UI)** 技巧：
+```typescript
+// 1. 使用者一按下新增，瞬間在前端畫面更新 (Optimistic Update)
+const newWatchlist = [...watchlist, sym];
+await updateProfile({ watchlist: newWatchlist });
+
+// 2. 背景偷偷發送 PHP API 同步資料庫
+try {
+  await apiFetch('/watchlist.php', { method: 'POST', body: { symbol: sym } });
+} catch (err) {
+  // 如果 PHP 後端突然掛掉，依然不影響前端操作，只在 Console 發出警告
+  console.warn("Failed to sync new symbol to PHP backend. It is only saved locally.");
+}
+```
+透過先更新畫面、後同步伺服器的策略，我們徹底消滅了網路延遲 (Latency) 帶來的不適感，讓整套 Bento-Grid 金融平台的流暢度達到了宛如原生 iOS App 般的絲滑境界！🚀
+
