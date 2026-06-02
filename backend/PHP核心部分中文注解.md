@@ -1,53 +1,53 @@
-# 🔥 PHP 后端核心部分中文注解
+# 🔥 PHP 後端核心部分中文註解
 
-## 📋 目录
-1. [数据库连接配置](#数据库连接配置)
-2. [身份认证系统](#身份认证系统)
-3. [中间件验证](#中间件验证)
-4. [用户资料管理](#用户资料管理)
-5. [监视列表管理](#监视列表管理)
-6. [财务数据爬取](#财务数据爬取)
-7. [数据库模式](#数据库模式)
+## 📋 目錄
+1. [資料庫連接組態](#資料庫連接組態)
+2. [身份認證系統](#身份認證系統)
+3. [中間件驗證](#中間件驗證)
+4. [使用者資料管理](#使用者資料管理)
+5. [監視列表管理](#監視列表管理)
+6. [財務數據爬取](#財務數據爬取)
+7. [資料庫模式](#資料庫模式)
 
 ---
 
-## 数据库连接配置
+## 資料庫連接組態
 
-### 文件: `backend/config/db.php`
+### 檔案: `backend/config/db.php`
 
 ```php
 <?php
-// 定义数据库连接常量
-define('DB_HOST', 'aws-1-ap-northeast-1.pooler.supabase.com'); // Supabase主机地址
-define('DB_PORT', '5432'); // PostgreSQL端口（5432允许绕过学校防火墙）
-define('DB_NAME', 'postgres'); // 数据库名称
-define('DB_USER', 'postgres.pezwarnweoafcrxjbdoy'); // 数据库用户名
-define('DB_PASS', 'Yoyo0613@@@@'); // 数据库密码
+// 定義資料庫連接常數
+define('DB_HOST', 'aws-1-ap-northeast-1.pooler.supabase.com'); // Supabase 主機位址
+define('DB_PORT', '5432'); // PostgreSQL 埠號（5432 允許繞過學校防火牆）
+define('DB_NAME', 'postgres'); // 資料庫名稱
+define('DB_USER', 'postgres.pezwarnweoafcrxjbdoy'); // 資料庫使用者名稱
+define('DB_PASS', 'Yoyo0613@@@@'); // 資料庫密碼
 
-// JWT密钥（用于生成和验证身份令牌）
+// JWT 密鑰（用於生成和驗證身份令牌）
 define('JWT_SECRET', 'your_super_secret_jwt_key_change_this_before_deploying');
 
 class Database {
-    private static $conn = null; // 单例模式：静态连接实例
+    private static $conn = null; // 單例模式：靜態連接實例
     
     public static function getConnection() {
-        // 只初始化一次连接（节省资源）
+        // 只初始化一次連接（節省資源）
         if (self::$conn === null) {
             try {
-                // DSN: 数据源名称（包含数据库连接信息）
-                $project_ref = explode('.', DB_USER)[1]; // 从用户名中提取项目引用
+                // DSN: 資料來源名稱（包含資料庫連接資訊）
+                $project_ref = explode('.', DB_USER)[1]; // 從使用者名稱中提取項目引用
                 $dsn = "pgsql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";sslmode=prefer;options=endpoint=$project_ref";
                 
-                // 创建PDO连接
+                // 建立 PDO 連接
                 self::$conn = new PDO($dsn, DB_USER, DB_PASS, array(
-                    PDO::ATTR_PERSISTENT => true // 持久连接：连接在脚本执行完后保持打开
+                    PDO::ATTR_PERSISTENT => true // 持久連接：連接在指令碼執行完後保持打開
                 ));
                 
-                // 配置PDO错误模式和默认行为
-                self::$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); // 异常模式
-                self::$conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC); // 返回关联数组
+                // 組態 PDO 錯誤模式和預設行為
+                self::$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); // 異常模式
+                self::$conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC); // 傳回關聯陣列
             } catch(PDOException $exception) {
-                // 返回通用错误消息（避免泄露数据库凭证）
+                // 傳回通用錯誤訊息（避免泄露資料庫憑證）
                 http_response_code(500);
                 echo json_encode(["error" => "Database connection error: " . $exception->getMessage()]);
                 exit;
@@ -59,105 +59,105 @@ class Database {
 ?>
 ```
 
-### 🔑 关键概念
-- **PDO**: PHP数据对象，提供统一的数据库接口
-- **单例模式**: 确保整个应用只有一个数据库连接实例
-- **预处理语句**: 使用`:placeholder`防止SQL注入攻击
+### 🔑 關鍵概念
+- **PDO**: PHP 資料物件，提供統一的資料庫介面
+- **單例模式**: 確保整個應用只有一個資料庫連接實例
+- **預處理語句**: 使用 `:placeholder` 防止 SQL 注入攻擊
 
 ---
 
-## 身份认证系统
+## 身份認證系統
 
-### 文件: `backend/api/auth.php`
+### 檔案: `backend/api/auth.php`
 
 ```php
 <?php
-// ===== CORS 设置 =====
-// 允许跨域请求（React前端可以访问该API）
-header("Access-Control-Allow-Origin: *"); // 生产环境改为具体域名
+// ===== CORS 設定 =====
+// 允許跨域請求（React 前端可以訪問該 API）
+header("Access-Control-Allow-Origin: *"); // 生產環境改為具體域名
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Methods: POST, OPTIONS"); // 允许的HTTP方法
-header("Access-Control-Max-Age: 3600"); // 预检请求缓存时间（秒）
+header("Access-Control-Allow-Methods: POST, OPTIONS"); // 允許的 HTTP 方法
+header("Access-Control-Max-Age: 3600"); // 預檢請求快取時間（秒）
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-// ===== 处理CORS预检请求 =====
-// OPTIONS请求是浏览器发送的预检请求（在实际POST之前）
+// ===== 處理 CORS 預檢請求 =====
+// OPTIONS 請求是瀏覽器發送的預檢請求（在實際 POST 之前）
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200); // 返回200表示允许
+    http_response_code(200); // 傳回 200 表示允許
     exit();
 }
 
-// 导入必要的库
-require_once '../config/db.php'; // 数据库连接
-require_once '../vendor/autoload.php'; // Composer自动加载器
-use \Firebase\JWT\JWT; // JWT库用于生成令牌
+// 匯入必要的庫
+require_once '../config/db.php'; // 資料庫連接
+require_once '../vendor/autoload.php'; // Composer 自動加載器
+use \Firebase\JWT\JWT; // JWT 庫用於生成令牌
 
-// 获取数据库连接
+// 取得資料庫連接
 $db = Database::getConnection();
 
-// ===== 接收前端发送的数据 =====
-$data = json_decode(file_get_contents("php://input")); // 从请求体读取JSON
-// php://input：从客户端读取原始POST数据
+// ===== 接收前端發送的資料 =====
+$data = json_decode(file_get_contents("php://input")); // 從請求體讀取 JSON
+// php://input：從客戶端讀取原始 POST 資料
 
-// 验证必需字段
+// 驗證必需欄位
 if (!isset($data->action) || !isset($data->email) || !isset($data->password)) {
-    http_response_code(400); // 400: 错误的请求
+    http_response_code(400); // 400: 錯誤的請求
     echo json_encode(["error" => "Incomplete data. Required: action (login/register), email, password."]);
     exit();
 }
 
-$email = trim($data->email); // 去除空格
+$email = trim($data->email); // 移除空格
 $password = $data->password;
 $action = $data->action; // 'register' 或 'login'
 
-// ===== 注册流程 =====
+// ===== 註冊流程 =====
 if ($action === 'register') {
-    // 1️⃣ 检查用户是否已存在
+    // 1️⃣ 檢查使用者是否已存在
     $check_query = "SELECT id FROM users WHERE email = :email";
-    $stmt = $db->prepare($check_query); // 准备SQL语句
-    $stmt->bindParam(":email", $email); // 绑定参数（防止SQL注入）
-    $stmt->execute(); // 执行查询
+    $stmt = $db->prepare($check_query); // 準備 SQL 語句
+    $stmt->bindParam(":email", $email); // 綁定參數（防止 SQL 注入）
+    $stmt->execute(); // 執行查詢
     
-    if ($stmt->rowCount() > 0) { // rowCount(): 返回受影响的行数
-        http_response_code(400); // 邮箱已存在
+    if ($stmt->rowCount() > 0) { // rowCount(): 傳回受影響的行數
+        http_response_code(400); // 郵箱已存在
         echo json_encode(["error" => "Email already exists."]);
         exit();
     }
     
-    // 2️⃣ 对密码进行哈希加密
-    // PASSWORD_BCRYPT: 使用Bcrypt算法，具有自适应延伸功能，可应对计算能力增长
+    // 2️⃣ 對密碼進行雜湊加密
+    // PASSWORD_BCRYPT: 使用 Bcrypt 演算法，具有自適應延伸功能，可應對計算能力增長
     $password_hash = password_hash($password, PASSWORD_BCRYPT);
     
-    // 3️⃣ 插入新用户
+    // 3️⃣ 插入新使用者
     $insert_query = "INSERT INTO users (email, password_hash, balance) VALUES (:email, :password_hash, 100000.00) RETURNING id";
-    // RETURNING id: PostgreSQL特性，返回插入的主键ID
+    // RETURNING id: PostgreSQL 特性，傳回插入的主鍵 ID
     $stmt = $db->prepare($insert_query);
     $stmt->bindParam(":email", $email);
     $stmt->bindParam(":password_hash", $password_hash);
     
     if ($stmt->execute()) {
-        // 获取返回的用户ID
-        $row = $stmt->fetch(PDO::FETCH_ASSOC); // FETCH_ASSOC: 返回关联数组
+        // 取得傳回的使用者 ID
+        $row = $stmt->fetch(PDO::FETCH_ASSOC); // FETCH_ASSOC: 傳回關聯陣列
         $user_id = $row['id'];
         
-        // 4️⃣ 生成JWT令牌
+        // 4️⃣ 生成 JWT 令牌
         $token = generateJWT($user_id, $email);
         
-        http_response_code(201); // 201: 资源已创建
+        http_response_code(201); // 201: 資源已建立
         echo json_encode([
             "message" => "User registered successfully.",
-            "token" => $token, // 前端存储此令牌用于后续认证
+            "token" => $token, // 前端儲存此令牌用於後續認證
             "user" => ["id" => $user_id, "email" => $email]
         ]);
     } else {
-        http_response_code(500); // 500: 服务器错误
+        http_response_code(500); // 500: 伺服器錯誤
         echo json_encode(["error" => "Unable to register user."]);
     }
 }
 
-// ===== 登录流程 =====
+// ===== 登入流程 =====
 elseif ($action === 'login') {
-    // 1️⃣ 查询邮箱对应的用户
+    // 1️⃣ 查詢郵箱對應的使用者
     $query = "SELECT id, email, password_hash FROM users WHERE email = :email";
     $stmt = $db->prepare($query);
     $stmt->bindParam(":email", $email);
@@ -166,11 +166,11 @@ elseif ($action === 'login') {
     if ($stmt->rowCount() > 0) {
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        // 2️⃣ 验证密码
-        // password_verify(): 将输入密码与存储的哈希值进行比较
-        // 安全原因：永远不存储明文密码，只存储哈希值
+        // 2️⃣ 驗證密碼
+        // password_verify(): 將輸入密碼與儲存的雜湊值進行比較
+        // 安全原因：永遠不存儲明文密碼，只存儲雜湊值
         if (password_verify($password, $row['password_hash'])) {
-            // 密码正确，生成JWT令牌
+            // 密碼正確，生成 JWT 令牌
             $token = generateJWT($row['id'], $row['email']);
             
             http_response_code(200); // 200: 成功
@@ -180,12 +180,12 @@ elseif ($action === 'login') {
                 "user" => ["id" => $row['id'], "email" => $row['email']]
             ]);
         } else {
-            // 密码错误
-            http_response_code(401); // 401: 未授权
+            // 密碼錯誤
+            http_response_code(401); // 401: 未授權
             echo json_encode(["error" => "Invalid password."]);
         }
     } else {
-        // 邮箱未找到
+        // 郵箱未找到
         http_response_code(404); // 404: 未找到
         echo json_encode(["error" => "Email not found."]);
     }
@@ -193,19 +193,19 @@ elseif ($action === 'login') {
 ?>
 ```
 
-### JWT生成函数
+### JWT 生成函式
 ```php
 function generateJWT($user_id, $email) {
-    // JWT的三部分：header.payload.signature
+    // JWT 的三部分：header.payload.signature
     
-    $issued_at = time(); // 发行时间（秒级时间戳）
-    $expire = $issued_at + (10 * 365 * 24 * 60 * 60); // 10年后过期
+    $issued_at = time(); // 發行時間（秒級時間戳記）
+    $expire = $issued_at + (10 * 365 * 24 * 60 * 60); // 10 年後過期
     
     /*
-    payload: 令牌包含的数据
-    - iat: 发行时间
-    - exp: 过期时间
-    - data: 用户信息
+    payload: 令牌包含的資料
+    - iat: 發行時間
+    - exp: 過期時間
+    - data: 使用者資訊
     */
     $payload = [
         'iat' => $issued_at,
@@ -216,46 +216,46 @@ function generateJWT($user_id, $email) {
         ]
     ];
     
-    // 使用JWT_SECRET密钥和HS256算法签署令牌
+    // 使用 JWT_SECRET 密鑰和 HS256 演算法簽署令牌
     $token = JWT::encode($payload, JWT_SECRET, 'HS256');
     return $token;
 }
 ```
 
-### 🔐 安全机制
-- **密码加密**: 使用Bcrypt（自适应算法）
-- **JWT令牌**: 无状态认证，无需服务器存储会话
-- **CORS**: 跨域资源共享，防止未授权熼域访问
-- **HTTP状态码**: 使用标准的HTTP状态码传达结果
+### 🔐 安全機制
+- **密碼加密**: 使用 Bcrypt（自適應演算法）
+- **JWT 令牌**: 無狀態認證，無需伺服器存儲會話
+- **CORS**: 跨域資源共享，防止未授權熼域訪問
+- **HTTP 狀態碼**: 使用標準的 HTTP 狀態碼傳達結果
 
 ---
 
-## 中间件验证
+## 中間件驗證
 
-### 文件: `backend/api/middleware.php`
+### 檔案: `backend/api/middleware.php`
 
 ```php
 <?php
-// middleware: 中间件，在处理请求前进行验证
+// middleware: 中間件，在處理請求前進行驗證
 
 require_once '../vendor/autoload.php';
 require_once '../config/db.php';
 use \Firebase\JWT\JWT;
-use \Firebase\JWT\Key; // 用于指定密钥和算法
+use \Firebase\JWT\Key; // 用於指定密鑰和演算法
 
 function authenticate() {
-    // ===== 获取请求头 =====
-    // HTTP请求通过Authorization头传递JWT令牌
+    // ===== 取得請求頭 =====
+    // HTTP 請求通過 Authorization 頭傳遞 JWT 令牌
     $headers = apache_request_headers();
     
-    // 备选方案：某些服务器（如Nginx）可能不支持apache_request_headers()
+    // 備選方案：某些伺服器（如 Nginx）可能不支援 apache_request_headers()
     if (!isset($headers['Authorization']) && isset($_SERVER['HTTP_AUTHORIZATION'])) {
         $headers['Authorization'] = $_SERVER['HTTP_AUTHORIZATION'];
     }
     
-    // ===== 检查授权头 =====
+    // ===== 檢查授權頭 =====
     if (!isset($headers['Authorization'])) {
-        http_response_code(401); // 401: 未授权
+        http_response_code(401); // 401: 未授權
         echo json_encode(["error" => "No authorization token provided."]);
         exit();
     }
@@ -264,7 +264,7 @@ function authenticate() {
     $authHeader = $headers['Authorization'];
     $arr = explode(" ", $authHeader); // 分割 "Bearer <token>"
     
-    // 确保格式正确
+    // 確保格式正確
     if (count($arr) !== 2 || $arr[0] !== 'Bearer') {
         http_response_code(401);
         echo json_encode(["error" => "Invalid authorization format. Expected 'Bearer <token>'"]);
@@ -273,17 +273,17 @@ function authenticate() {
     
     $jwt = $arr[1]; // 提取令牌
     
-    // ===== 验证并解码JWT =====
+    // ===== 驗證並解碼 JWT =====
     try {
-        // JWT::decode(): 验证签名并返回payload
-        // Key对象：指定密钥和算法
+        // JWT::decode(): 驗證簽名並傳回 payload
+        // Key 物件：指定密鑰和演算法
         $decoded = JWT::decode($jwt, new Key(JWT_SECRET, 'HS256'));
         
-        // $decoded->data 包含 {id, email} 用户信息
+        // $decoded->data 包含 {id, email} 使用者資訊
         return $decoded->data;
         
     } catch (Exception $e) {
-        // 令牌无效、已过期或签名不匹配
+        // 令牌無效、已過期或簽名不匹配
         http_response_code(401);
         echo json_encode(["error" => "Access denied. " . $e->getMessage()]);
         exit();
@@ -294,35 +294,35 @@ function authenticate() {
 
 ### 📍 使用示例
 ```php
-// 在任何需要认证的API端点中调用
+// 在任何需要認證的 API 端點中呼叫
 require_once 'middleware.php';
-$user = authenticate(); // 返回 {id, email} 或抛出401错误
+$user = authenticate(); // 傳回 {id, email} 或拋出 401 錯誤
 $user_id = $user->id;
 $email = $user->email;
 ```
 
-### 🔍 验证流程
-1. 获取请求头中的Authorization字段
+### 🔍 驗證流程
+1. 取得請求頭中的 Authorization 欄位
 2. 解析格式 "Bearer <token>"
-3. 验证JWT签名（防止篡改）
-4. 检查过期时间
-5. 返回包含的用户数据或抛出401错误
+3. 驗證 JWT 簽名（防止篡改）
+4. 檢查過期時間
+5. 傳回包含的使用者資料或拋出 401 錯誤
 
 ---
 
-## 用户资料管理
+## 使用者資料管理
 
-### 文件: `backend/api/profile.php`
+### 檔案: `backend/api/profile.php`
 
 ```php
 <?php
-// ===== 获取用户资料 (GET请求) =====
+// ===== 取得使用者資料 (GET 請求) =====
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    // 需要JWT认证，获取当前用户ID
-    $user = authenticate(); // 来自middleware.php
+    // 需要 JWT 認證，取得目前使用者 ID
+    $user = authenticate(); // 來自 middleware.php
     $db = Database::getConnection();
     
-    // 1️⃣ 查询用户基本信息
+    // 1️⃣ 查詢使用者基本資訊
     $query = "SELECT id, email, balance, name, bio FROM users WHERE id = :id";
     $stmt = $db->prepare($query);
     $stmt->bindParam(":id", $user->id);
@@ -331,26 +331,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($stmt->rowCount() > 0) {
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        // 2️⃣ 获取用户的监视列表（关注的股票）
+        // 2️⃣ 取得使用者的監視列表（關注的股票）
         $wl_query = "SELECT symbol FROM watchlists WHERE user_id = :id";
         $wl_stmt = $db->prepare($wl_query);
         $wl_stmt->bindParam(":id", $user->id);
         $wl_stmt->execute();
         
-        $watchlist = []; // 存储所有股票代码
+        $watchlist = []; // 存儲所有股票代碼
         while ($wl_row = $wl_stmt->fetch(PDO::FETCH_ASSOC)) {
             $watchlist[] = $wl_row['symbol'];
         }
         
-        // 3️⃣ 返回格式化的用户资料
+        // 3️⃣ 傳回格式化的使用者資料
         echo json_encode([
             "id" => $row['id'],
             "email" => $row['email'],
             "name" => $row['name'],
             "bio" => $row['bio'],
-            "balance" => (float)$row['balance'], // 转换为浮点数
-            "watchlist" => $watchlist, // 用户关注的所有股票
-            "currency" => "USD" // 货币单位
+            "balance" => (float)$row['balance'], // 轉換為浮點數
+            "watchlist" => $watchlist, // 使用者關注的所有股票
+            "currency" => "USD" // 貨幣單位
         ]);
     } else {
         http_response_code(404);
@@ -358,28 +358,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 }
 
-// ===== 更新用户资料 (POST请求) =====
+// ===== 更新使用者資料 (POST 請求) =====
 elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = authenticate();
     $db = Database::getConnection();
     
-    // 获取请求体的JSON数据
+    // 取得請求體的 JSON 資料
     $data = json_decode(file_get_contents("php://input"));
     
-    // 构建动态UPDATE语句（只更新提供的字段）
-    $updates = []; // 存储要更新的列名
+    // 構建動態 UPDATE 語句（只更新提供的欄位）
+    $updates = []; // 存儲要更新的列名
     
-    // 检查哪些字段被提供
+    // 檢查哪些欄位被提供
     if (isset($data->balance)) $updates[] = "balance = :balance";
     if (isset($data->name)) $updates[] = "name = :name";
     if (isset($data->bio)) $updates[] = "bio = :bio";
     
     if (count($updates) > 0) {
-        // 动态构建UPDATE语句
+        // 動態構建 UPDATE 語句
         $query = "UPDATE users SET " . implode(", ", $updates) . " WHERE id = :id";
         $stmt = $db->prepare($query);
         
-        // 绑定对应的参数
+        // 綁定對應的參數
         if (isset($data->balance)) $stmt->bindParam(":balance", $data->balance);
         if (isset($data->name)) $stmt->bindParam(":name", $data->name);
         if (isset($data->bio)) $stmt->bindParam(":bio", $data->bio);
@@ -392,7 +392,7 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(["error" => "Failed to update profile."]);
         }
     } else {
-        // 没有有效的更新数据
+        // 沒有有效的更新資料
         http_response_code(400);
         echo json_encode(["error" => "No valid data provided for update."]);
     }
@@ -400,29 +400,29 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 ```
 
-### 💡 关键设计
-- **GET**: 获取当前用户的完整资料
-- **POST**: 更新用户可修改的字段
-- **动态SQL**: 只更新提供的字段，灵活高效
-- **关联查询**: 同时获取用户信息和监视列表
+### 💡 關鍵設計
+- **GET**: 取得目前使用者的完整資料
+- **POST**: 更新使用者可修改的欄位
+- **動態 SQL**: 只更新提供的欄位，靈活高效
+- **關聯查詢**: 同時取得使用者資訊和監視列表
 
 ---
 
-## 监视列表管理
+## 監視列表管理
 
-### 文件: `backend/api/watchlist.php`
+### 檔案: `backend/api/watchlist.php`
 
 ```php
 <?php
-require_once 'middleware.php'; // 认证用户
+require_once 'middleware.php'; // 認證使用者
 
-$user = authenticate(); // 获取当前用户
+$user = authenticate(); // 取得目前使用者
 $db = Database::getConnection();
 
-// 获取POST/DELETE请求的JSON数据
+// 取得 POST/DELETE 請求的 JSON 資料
 $data = json_decode(file_get_contents("php://input"));
 
-// ===== 添加股票到监视列表 (POST) =====
+// ===== 新增股票到監視列表 (POST) =====
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($data->symbol)) {
         http_response_code(400);
@@ -430,11 +430,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
     
-    $symbol = strtoupper(trim($data->symbol)); // 转大写，去除空格
+    $symbol = strtoupper(trim($data->symbol)); // 轉大寫，去除空格
     
     // INSERT ... ON CONFLICT DO NOTHING
-    // 如果 (user_id, symbol) 已存在，则忽略此插入（不报错）
-    // 这允许前端多次点击"添加"而不会导致重复或错误
+    // 如果 (user_id, symbol) 已存在，則忽略此插入（不報錯）
+    // 這允許前端多次點擊「新增」而不會導致重複或錯誤
     $query = "INSERT INTO watchlists (user_id, symbol) VALUES (:user_id, :symbol) ON CONFLICT DO NOTHING";
     $stmt = $db->prepare($query);
     $stmt->bindParam(":user_id", $user->id);
@@ -448,7 +448,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ===== 从监视列表删除股票 (DELETE) =====
+// ===== 從監視列表移除股票 (DELETE) =====
 elseif ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
     if (!isset($data->symbol)) {
         http_response_code(400);
@@ -458,7 +458,7 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
     
     $symbol = strtoupper(trim($data->symbol));
     
-    // 删除符合条件的记录
+    // 移除符合條件的記錄
     $query = "DELETE FROM watchlists WHERE user_id = :user_id AND symbol = :symbol";
     $stmt = $db->prepare($query);
     $stmt->bindParam(":user_id", $user->id);
@@ -475,44 +475,44 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
 ```
 
 ### 🎯 功能特性
-- **POST**: 添加股票到监视列表（带去重）
-- **DELETE**: 从监视列表删除股票
-- **ON CONFLICT**: PostgreSQL特性，处理重复插入
-- **用户隔离**: 每个用户只能操作自己的监视列表
+- **POST**: 新增股票到監視列表（帶去重）
+- **DELETE**: 從監視列表移除股票
+- **ON CONFLICT**: PostgreSQL 特性，處理重複插入
+- **使用者隔離**: 每個使用者只能操作自己的監視列表
 
 ---
 
-## 财务数据爬取
+## 財務數據爬取
 
-### 文件: `backend/api/financial_scraper.php`
+### 檔案: `backend/api/financial_scraper.php`
 
 ```php
 <?php
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 
-// 从URL参数获取股票代码（默认为AAPL）
+// 從 URL 參數取得股票代碼（預設為 AAPL）
 $symbol = isset($_GET['symbol']) ? strtoupper(trim($_GET['symbol'])) : 'AAPL';
 
-// ===== 尝试从Yahoo Finance API获取真实数据 =====
+// ===== 嘗試從 Yahoo Finance API 取得真實數據 =====
 $url = "https://query1.finance.yahoo.com/v10/finance/quoteSummary/{$symbol}?modules=incomeStatementHistory";
 
-$ch = curl_init($url); // 初始化cURL会话
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // 返回结果而不是输出
+$ch = curl_init($url); // 初始化 cURL 會話
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // 傳回結果而不是輸出
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
-    // 添加浏览器User-Agent头，某些API可能会阻止bot
+    // 新增瀏覽器 User-Agent 頭，某些 API 可能會阻止 bot
     'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
     'Accept: application/json',
     'Connection: keep-alive'
 ]);
-curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // 跟随重定向
-curl_setopt($ch, CURLOPT_TIMEOUT, 5); // 5秒超时
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // 跟隨重定向
+curl_setopt($ch, CURLOPT_TIMEOUT, 5); // 5 秒超時
 
-$response = curl_exec($ch); // 执行请求
-$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE); // 获取HTTP响应码
-curl_close($ch); // 关闭会话
+$response = curl_exec($ch); // 執行請求
+$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE); // 取得 HTTP 回應碼
+curl_close($ch); // 關閉會話
 
-// ===== 解析真实数据 =====
+// ===== 解析真實數據 =====
 $realData = null;
 if ($httpcode == 200 && $response) {
     $data = json_decode($response, true);
@@ -521,15 +521,15 @@ if ($httpcode == 200 && $response) {
     }
 }
 
-// ===== 生成树形结构 =====
-// 前端使用DFS（深度优先搜索）遍历此树形结构来可视化财务数据
+// ===== 生成樹形結構 =====
+// 前端使用 DFS（深度優先搜尋）遍歷此樹形結構來可視化財務資料
 
 if ($realData) {
-    // 使用真实数据构建树
+    // 使用真實資料構建樹
     $tree = [
         "name" => "Total Revenue",
         "value" => $realData['totalRevenue']['raw'] ?? 0,
-        "fmt" => $realData['totalRevenue']['fmt'] ?? "0", // fmt: 格式化的显示值
+        "fmt" => $realData['totalRevenue']['fmt'] ?? "0", // fmt: 格式化的顯示值
         "children" => [
             [
                 "name" => "Operating Income",
@@ -546,22 +546,22 @@ if ($realData) {
         ]
     ];
 } else {
-    // API被阻止或超时？生成模拟数据
-    // 使用符号的哈希值生成"真实"但可重复的随机数据
-    $hash = md5($symbol); // 同一股票符号总是生成相同的模拟数据
-    $seed = hexdec(substr($hash, 0, 5)); // 从哈希中提取种子
-    srand($seed); // 使用种子初始化随机数生成器
+    // API 被阻止或超時？生成模擬資料
+    // 使用符號的雜湊值生成「真實」但可重複的隨機資料
+    $hash = md5($symbol); // 同一股票符號總是生成相同的模擬資料
+    $seed = hexdec(substr($hash, 0, 5)); // 從雜湊中提取種子
+    srand($seed); // 使用種子初始化隨機數生成器
     
-    $baseRev = rand(20000, 400000) * 1000000; // 基础收入：200亿到4000亿
+    $baseRev = rand(20000, 400000) * 1000000; // 基礎收入：200 億到 4000 億
     
     $tree = [
         "name" => "Total Revenue",
         "value" => $baseRev,
-        "fmt" => "$" . number_format($baseRev / 1000000000, 2) . "B", // "B" = 十亿
+        "fmt" => "$" . number_format($baseRev / 1000000000, 2) . "B", // "B" = 十億
         "children" => [
             [
                 "name" => "Core Products",
-                "value" => $baseRev * 0.65, // 占65%
+                "value" => $baseRev * 0.65, // 佔 65%
                 "fmt" => "$" . number_format(($baseRev * 0.65) / 1000000000, 2) . "B",
                 "children" => [
                     ["name" => "Hardware", "value" => $baseRev * 0.4, "fmt" => "$" . ..., "children" => []],
@@ -570,218 +570,218 @@ if ($realData) {
             ],
             [
                 "name" => "Services & Subscriptions",
-                "value" => $baseRev * 0.35, // 占35%
+                "value" => $baseRev * 0.35, // 佔 35%
                 "fmt" => "$" . number_format(($baseRev * 0.35) / 1000000000, 2) . "B",
                 "children" => [
                     ["name" => "Cloud Services", "value" => $baseRev * 0.2, ...],
-                    // 更多子项...
+                    // 更多子項...
                 ]
             ]
         ]
     ];
 }
 
-// 返回JSON树结构
+// 傳回 JSON 樹結構
 echo json_encode($tree);
 ?>
 ```
 
-### 🌳 树形结构设计
+### 🌳 樹形結構設計
 ```
-Total Revenue (根节点)
-├── Core Products (65%)
-│   ├── Hardware (40%)
-│   └── Software Licenses (25%)
-└── Services & Subscriptions (35%)
-    ├── Cloud Services (20%)
-    └── Support & Maintenance (15%)
+總收入（根節點）
+├── 核心產品 (65%)
+│   ├── 硬體 (40%)
+│   └── 軟體授權 (25%)
+└── 服務與訂閱 (35%)
+    ├── 雲服務 (20%)
+    └── 支援與維護 (15%)
 ```
 
-### 🔄 容错机制
-- **真实API**: 优先尝试Yahoo Finance API
-- **模拟数据**: API被阻止时使用，但保证一致性（相同符号总是相同数据）
-- **cURL配置**: 浏览器User-Agent、超时、重定向等
+### 🔄 容錯機制
+- **真實 API**: 優先嘗試 Yahoo Finance API
+- **模擬資料**: API 被阻止時使用，但保證一致性（相同符號總是相同資料）
+- **cURL 組態**: 瀏覽器 User-Agent、超時、重定向等
 
 ---
 
-## 数据库模式
+## 資料庫模式
 
-### 文件: `backend/schema.sql`
+### 檔案: `backend/schema.sql`
 
 ```sql
--- ===== 用户表 =====
+-- ===== 使用者表 =====
 CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY, -- 自动递增的主键
-    email VARCHAR(255) UNIQUE NOT NULL, -- 唯一邮箱
-    password_hash VARCHAR(255) NOT NULL, -- 加密后的密码
-    name VARCHAR(255) DEFAULT '', -- 用户名字
-    bio TEXT DEFAULT '', -- 用户个人简介
-    balance NUMERIC(15, 2) DEFAULT 0.00, -- 账户余额（15位数字，2位小数）
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP -- 创建时间
+    id SERIAL PRIMARY KEY, -- 自動遞增的主鍵
+    email VARCHAR(255) UNIQUE NOT NULL, -- 唯一郵箱
+    password_hash VARCHAR(255) NOT NULL, -- 加密後的密碼
+    name VARCHAR(255) DEFAULT '', -- 使用者名字
+    bio TEXT DEFAULT '', -- 使用者個人簡介
+    balance NUMERIC(15, 2) DEFAULT 0.00, -- 帳戶餘額（15 位數字，2 位小數）
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP -- 建立時間
 );
 
--- ===== 监视列表表 =====
+-- ===== 監視列表表 =====
 CREATE TABLE IF NOT EXISTS watchlists (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE, -- 外键，删除用户时级联删除
-    symbol VARCHAR(50) NOT NULL, -- 股票代码（如AAPL, MSFT）
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE, -- 外鍵，刪除使用者時級聯刪除
+    symbol VARCHAR(50) NOT NULL, -- 股票代碼（如 AAPL, MSFT）
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(user_id, symbol) -- 复合唯一键：同一用户不能添加相同股票两次
+    UNIQUE(user_id, symbol) -- 複合唯一鍵：同一使用者不能新增相同股票兩次
 );
 
--- ===== 论坛帖子表 =====
+-- ===== 論壇帖子表 =====
 CREATE TABLE IF NOT EXISTS forum_posts (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE, -- 发帖人
-    title VARCHAR(255) NOT NULL, -- 帖子标题
-    content TEXT NOT NULL, -- 帖子内容
-    likes_count INTEGER DEFAULT 0, -- 点赞数
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE, -- 發帖人
+    title VARCHAR(255) NOT NULL, -- 帖子標題
+    content TEXT NOT NULL, -- 帖子內容
+    likes_count INTEGER DEFAULT 0, -- 點贊數
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- ===== 论坛评论表 =====
+-- ===== 論壇評論表 =====
 CREATE TABLE IF NOT EXISTS forum_comments (
     id SERIAL PRIMARY KEY,
-    post_id INTEGER REFERENCES forum_posts(id) ON DELETE CASCADE, -- 所属帖子
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE, -- 评论者
-    content TEXT NOT NULL, -- 评论内容
+    post_id INTEGER REFERENCES forum_posts(id) ON DELETE CASCADE, -- 所屬帖子
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE, -- 評論者
+    content TEXT NOT NULL, -- 評論內容
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- ===== 论坛点赞表 =====
+-- ===== 論壇點贊表 =====
 CREATE TABLE IF NOT EXISTS forum_likes (
-    post_id INTEGER REFERENCES forum_posts(id) ON DELETE CASCADE, -- 被点赞的帖子
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE, -- 点赞的用户
+    post_id INTEGER REFERENCES forum_posts(id) ON DELETE CASCADE, -- 被點贊的帖子
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE, -- 點贊的使用者
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (post_id, user_id) -- 复合主键：防止重复点赞
+    PRIMARY KEY (post_id, user_id) -- 複合主鍵：防止重複點贊
 );
 ```
 
-### 📊 表关系图
+### 📊 表關係圖
 ```
-users (1)
-  ├── (N) watchlists
-  ├── (N) forum_posts
-  ├── (N) forum_comments
-  └── (N) forum_likes
+使用者 (1)
+  ├── (N) 監視列表
+  ├── (N) 論壇帖子
+  ├── (N) 論壇評論
+  └── (N) 論壇點贊
 
-forum_posts (1)
-  ├── (N) forum_comments
-  └── (N) forum_likes
+論壇帖子 (1)
+  ├── (N) 論壇評論
+  └── (N) 論壇點贊
 ```
 
-### 🔑 关键数据库概念
-- **SERIAL**: 自动递增整数
-- **UNIQUE**: 唯一约束
-- **REFERENCES**: 外键关系
-- **ON DELETE CASCADE**: 删除用户时自动删除其关联数据
-- **NUMERIC(15,2)**: 精确小数（财务数据必须精确，不能用FLOAT）
+### 🔑 關鍵資料庫概念
+- **SERIAL**: 自動遞增整數
+- **UNIQUE**: 唯一約束
+- **REFERENCES**: 外鍵關係
+- **ON DELETE CASCADE**: 刪除使用者時自動刪除其關聯資料
+- **NUMERIC(15,2)**: 精確小數（財務資料必須精確，不能用 FLOAT）
 
 ---
 
 ## 🚀 核心工作流
 
-### 1️⃣ 注册流程
+### 1️⃣ 註冊流程
 ```
-前端输入邮箱/密码
+前端輸入郵箱/密碼
     ↓
 POST /auth.php { action: 'register', email, password }
     ↓
-检查邮箱是否存在 → 已存在则返回400错误
+檢查郵箱是否存在 → 已存在則傳回 400 錯誤
     ↓
-Bcrypt加密密码
+Bcrypt 加密密碼
     ↓
-插入users表
+插入使用者表
     ↓
-生成JWT令牌（10年有效期）
+生成 JWT 令牌（10 年有效期）
     ↓
-返回token + user信息
+傳回 token + 使用者資訊
     ↓
-前端存储token（localStorage）
+前端儲存 token（localStorage）
 ```
 
-### 2️⃣ 登录流程
+### 2️⃣ 登錄流程
 ```
-前端输入邮箱/密码
+前端輸入郵箱/密碼
     ↓
 POST /auth.php { action: 'login', email, password }
     ↓
-查询users表
+查詢 users 表
     ↓
-password_verify() 验证密码
+password_verify() 驗證密碼
     ↓
-密码正确 → 生成JWT令牌
+密碼正確 → 生成 JWT 令牌
     ↓
-返回token + user信息
+傳回 token + 使用者資訊
     ↓
-前端存储token
+前端儲存 token
 ```
 
-### 3️⃣ 受保护API调用
+### 3️⃣ 受保護 API 呼叫
 ```
-前端API请求
+前端 API 請求
     ↓
-在Authorization头添加 "Bearer <token>"
+在 Authorization 頭新增 "Bearer <token>"
     ↓
-后端自动调用 authenticate()
+後端自動呼叫 authenticate()
     ↓
-验证JWT签名 + 过期时间
+驗證 JWT 簽名 + 過期時間
     ↓
-有效 → 处理请求并返回数据
+有效 → 處理請求並傳回數據
     ↓
-无效 → 返回401错误，前端重定向到登录
+無效 → 傳回 401 錯誤，前端重定向到登錄
 ```
 
 ---
 
-## 🔒 安全最佳实践
+## 🔒 安全最佳實踐
 
-| 安全问题 | 解决方案 |
+| 安全問題 | 解決方案 |
 |---------|---------|
-| **SQL注入** | 使用预处理语句 (`:placeholder`) |
-| **密码泄露** | Bcrypt加密 + 永不存储明文 |
-| **会话劫持** | JWT代替session |
-| **跨域攻击** | CORS头配置 + 生产环境指定域名 |
-| **令牌泄露** | HTTPS传输 + 短期过期时间 |
-| **CSRF** | SameSite Cookie属性 + CSRF令牌 |
-| **密码暴力** | 使用Bcrypt的自适应延伸 |
+| **SQL 注入** | 使用預處理語句 (`:placeholder`) |
+| **密碼洩露** | Bcrypt 加密 + 永不儲存明文 |
+| **會話劫持** | JWT 代替 session |
+| **跨域攻擊** | CORS 頭組態 + 生產環境指定域名 |
+| **令牌洩露** | HTTPS 傳輸 + 短期過期時間 |
+| **CSRF** | SameSite Cookie 屬性 + CSRF 令牌 |
+| **密碼暴力** | 使用 Bcrypt 的自適應延伸 |
 
 ---
 
-## 📦 依赖项
+## 📦 依賴項
 
 ```json
 {
   "require": {
-    "firebase/php-jwt": "^6.0" // JWT生成和验证库
+    "firebase/php-jwt": "^6.0" // JWT 生成和驗證庫
   }
 }
 ```
 
-安装: `composer require firebase/php-jwt`
+安裝: `composer require firebase/php-jwt`
 
 ---
 
-## 🔗 环境变量清单
+## 🔗 環境變數清單
 
 ```
 DB_HOST=aws-1-ap-northeast-1.pooler.supabase.com
 DB_PORT=5432
 DB_NAME=postgres
-DB_USER=你的Supabase用户名
-DB_PASS=你的Supabase密码
-JWT_SECRET=超级秘密密钥（生产环境必须强安全）
-CORS_ORIGIN=你的前端域名（生产环境）
+DB_USER=你的 Supabase 使用者名稱
+DB_PASS=你的 Supabase 密碼
+JWT_SECRET=超級秘密密鑰（生產環境必須強安全）
+CORS_ORIGIN=你的前端域名（生產環境）
 ```
 
 ---
 
-## 🎓 学习要点总结
+## 🎓 學習要點總結
 
-1. **HTTP状态码**: 200✅ 400❌ 401🔐 404❓ 500💥 
-2. **JWT**: 无状态认证的未来
-3. **PDO**: 防止SQL注入的关键
-4. **CORS**: 允许前端跨域调用
-5. **后端验证**: 永远不信任前端
-6. **错误处理**: 向用户返回安全的通用错误，日志记录详细错误
-7. **树形数据结构**: 高效表示层级财务数据
+1. **HTTP 狀態碼**: 200✅ 400❌ 401🔐 404❓ 500💥 
+2. **JWT**: 無狀態認證的未來
+3. **PDO**: 防止 SQL 注入的關鍵
+4. **CORS**: 允許前端跨域呼叫
+5. **後端驗證**: 永遠不信任前端
+6. **錯誤處理**: 向使用者傳回安全的通用錯誤，日誌記錄詳細錯誤
+7. **樹形資料結構**: 高效表示層級財務資料
