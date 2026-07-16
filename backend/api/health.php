@@ -8,6 +8,8 @@ header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json");
 
 try {
+    // 取得資料庫連接
+    $pdo = Database::getConnection();
     // 執行一個最簡單的查詢，觸發 Supabase 的活動記錄
     $stmt = $pdo->query("SELECT 1");
     if ($stmt) {
