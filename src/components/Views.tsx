@@ -375,6 +375,7 @@ import { AdvancedRealTimeChart, CompanyProfile, SymbolInfo, FundamentalData } fr
 import { EarningsForecastWidget } from "./EarningsForecastWidget";
 import { FinancialTreeView } from "./FinancialTreeView";
 import { CorrelationGraph } from "./CorrelationGraph";
+import { SearchWidget } from "./SearchWidget";
 
 export const AnalysisView = ({ symbol }: { symbol: string }) => {
   return (
@@ -383,6 +384,17 @@ export const AnalysisView = ({ symbol }: { symbol: string }) => {
       animate={{ opacity: 1, y: 0 }}
       className="w-full flex flex-col gap-6"
     >
+      <div className="bg-card border border-border rounded-2xl p-4 shadow-sm flex flex-col gap-2">
+        <div className="flex items-center justify-between border-b border-border/50 pb-2 mb-1 px-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-foreground">目標分析股票：</span>
+            <span className="text-base font-extrabold text-primary bg-primary/10 px-3 py-0.5 rounded-lg border border-primary/20 tracking-wider">{symbol}</span>
+          </div>
+          <span className="text-xs text-muted-foreground hidden sm:inline">鍵盤輸入代號後按 Enter 或點擊下方提示立刻切換</span>
+        </div>
+        <SearchWidget compact={true} />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <FinancialTreeView symbol={symbol} />
         <CorrelationGraph symbol={symbol} />

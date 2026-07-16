@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Search, Plus, Check } from "lucide-react";
+import { Search, Plus, Check, TrendingUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import { apiFetch } from "../lib/api";
 
@@ -45,12 +46,28 @@ const binarySearchPrefix = (arr: string[], target: string) => {
   return [];
 };
 
-export const SearchWidget = () => {
+export const SearchWidget = ({ onSelectSymbol, compact = false }: { onSelectSymbol?: (symbol: string) => void, compact?: boolean } = {}) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
   const [addedSymbols, setAddedSymbols] = useState<Set<string>>(new Set());
   const { profile, updateProfile } = useUser();
+  const navigate = useNavigate();
+
+  const handleSelect = (symbol: string) => {
+    if (onSelectSymbol) {
+      onSelectSymbol(symbol);
+    } else {
+      navigate(`/analysis?symbol=${encodeURIComponent(symbol)}`);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && query.trim()) {
+      handleSelect(query.trim().toUpperCase());
+      setResults([]);
+    }
+  };
 
   useEffect(() => {
     const search = async () => {
@@ -98,7 +115,8 @@ export const SearchWidget = () => {
     return () => clearTimeout(timeoutId);
   }, [query]);
 
-  const handleAdd = async (symbol: string) => {
+  const handleAdd = async (symbol: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     const watchlist = profile.watchlist || [];
     if (!watchlist.includes(symbol)) {
       setAddedSymbols(prev => new Set(prev).add(symbol));
@@ -119,11 +137,14 @@ export const SearchWidget = () => {
 
   const handleTagClick = (tag: string) => {
     setQuery(tag);
+    if (compact) {
+      handleSelect(tag);
+    }
   };
 
   return (
-    <div className="w-full h-full flex flex-col justify-start gap-4 py-4 relative">
-      <h2 className="text-2xl font-bold text-foreground mb-2">Find Opportunities</h2>
+    <div className={`w-full h-full flex flex-col justify-start ${compact ? 'gap-2 py-2' : 'gap-4 py-4'} relative`}>
+      {!compact && <h2 className="text-2xl font-bold text-foreground mb-2">Find Opportunities</h2>}
       <div className="relative group z-20">
         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground group-hover:text-primary transition-colors">
           {searching ? (
@@ -136,24 +157,48 @@ export const SearchWidget = () => {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="bg-card-hover border border-border text-foreground text-sm rounded-xl focus:ring-primary focus:border-primary block w-full pl-10 p-3 transition-all outline-none placeholder-neutral-500 hover:border-border/80"
-          placeholder="Search stocks, ETFs, crypto..."
+          onKeyDown={handleKeyDown}
+          className={`bg-card-hover border border-border text-foreground text-sm rounded-xl focus:ring-primary focus:border-primary block w-full pl-10 ${compact ? 'py-2.5 pr-4' : 'p-3'} transition-all outline-none placeholder-neutral-500 hover:border-border/80`}
+          placeholder={compact ? "輸入代號秒切換或按 Enter (例如 NVDA, 2330.TW)..." : "Search stocks, ETFs, crypto (Press Enter to analyze)..."}
         />
         
         {results.length > 0 && query.trim() && (
           <div className="absolute top-full left-0 right-0 mt-2 bg-card-hover border border-border rounded-xl overflow-hidden shadow-xl z-50">
             {results.map((item, idx) => (
-              <div key={`${item.symbol}-${idx}`} className="flex items-center justify-between p-3 hover:bg-neutral-800/50 border-b border-border last:border-0 transition-colors">
+              <div 
+                key={`${item.symbol}-${idx}`} 
+                onClick={() => {
+                  handleSelect(item.symbol);
+                  setResults([]);
+                }}
+                className="flex items-center justify-between p-3 hover:bg-neutral-800/80 border-b border-border last:border-0 transition-colors cursor-pointer group/item"
+              >
                 <div className="flex flex-col">
-                  <span className="text-foreground font-bold">{item.symbol}</span>
+                  <span className="text-foreground font-bold group-hover/item:text-primary flex items-center gap-1.5 transition-colors">
+                    {item.symbol}
+                    <TrendingUp size={14} className="text-primary opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                  </span>
                   <span className={`text-xs truncate max-w-[200px] ${item.isLocal ? 'text-success font-semibold' : 'text-muted-foreground'}`}>{item.shortname || item.longname}</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  {item.isLocal && <span className="text-[10px] bg-success/20 text-success px-2 py-1 rounded-full animate-pulse border border-success/30">Binary Search</span>}
+                <div className="flex items-center gap-2">
+                  {item.isLocal && <span className="text-[10px] bg-success/20 text-success px-2 py-1 rounded-full border border-success/30">Binary Search</span>}
                   <span className="text-[10px] uppercase tracking-wider px-2 py-1 bg-neutral-800 rounded text-muted-foreground">{item.quoteType}</span>
                   <button 
-                    onClick={() => handleAdd(item.symbol)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelect(item.symbol);
+                      setResults([]);
+                    }}
+                    title="立即分析這檔股票"
+                    className="px-2.5 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-colors text-xs flex items-center gap-1 font-medium shadow-sm"
+                  >
+                    <TrendingUp size={13} />
+                    <span className="hidden sm:inline">分析</span>
+                  </button>
+                  <button 
+                    onClick={(e) => handleAdd(item.symbol, e)}
                     disabled={(profile.watchlist || []).includes(item.symbol) || addedSymbols.has(item.symbol)}
+                    title="加入自選股"
                     className="p-1.5 rounded-lg bg-primary/20 text-primary hover:bg-primary hover:text-white transition-colors disabled:opacity-50 disabled:bg-neutral-800 disabled:text-muted-foreground disabled:hover:bg-neutral-800"
                   >
                     {(profile.watchlist || []).includes(item.symbol) || addedSymbols.has(item.symbol) ? (
@@ -168,12 +213,16 @@ export const SearchWidget = () => {
           </div>
         )}
       </div>
-      <div className="flex gap-2 mt-2 flex-wrap">
-        {["TSLA", "NVDA", "BTC-USD", "SPY"].map((tag) => (
+      <div className="flex gap-2 mt-1 flex-wrap items-center">
+        {compact && <span className="text-xs text-muted-foreground font-medium">快速切換:</span>}
+        {["TSLA", "NVDA", "AAPL", "2330.TW", "BTC-USD", "SPY"].map((tag) => (
           <span 
             key={tag} 
-            onClick={() => handleTagClick(tag)}
-            className="px-3 py-1 bg-card-hover text-xs text-muted-foreground rounded-full border border-border cursor-pointer hover:bg-border transition-colors"
+            onClick={() => {
+              handleTagClick(tag);
+              if (compact) handleSelect(tag);
+            }}
+            className="px-3 py-1 bg-card-hover text-xs text-muted-foreground hover:text-foreground rounded-full border border-border cursor-pointer hover:bg-border transition-colors font-medium flex items-center gap-1"
           >
             {tag}
           </span>
