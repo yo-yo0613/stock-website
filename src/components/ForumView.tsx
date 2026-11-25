@@ -28,8 +28,16 @@ const CLOUD_NAME = "dt1ridsu5";
 const UPLOAD_PRESET = "sister_preset";
 
 export const ForumView = () => {
-  const { session } = useUser();
+  const { session, isDemo, signOut } = useUser();
   const currentUserId = session?.user?.id;
+
+  const promptRealLoginIfDemo = (actionLabel: string): boolean => {
+    if (!isDemo) return false;
+    if (window.confirm(`訪客體驗模式目前為唯讀瀏覽。\n是否前往登入或免費註冊雲端帳號，以${actionLabel}？`)) {
+      signOut();
+    }
+    return true;
+  };
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,6 +114,7 @@ export const ForumView = () => {
 
   const handleLike = async (e: React.MouseEvent, postId: number) => {
     e.stopPropagation();
+    if (promptRealLoginIfDemo("按讚收藏文章")) return;
     try {
       const res = await apiFetch('/forum.php?action=like', {
         method: 'POST',
@@ -166,6 +175,7 @@ export const ForumView = () => {
 
   const handleCreatePost = async () => {
     if (!newContent.trim()) return;
+    if (promptRealLoginIfDemo("發表量化觀點")) return;
     try {
       await apiFetch('/forum.php?action=create', {
         method: 'POST',
@@ -227,6 +237,7 @@ export const ForumView = () => {
 
   const handleCreateComment = async () => {
     if (!newComment.trim() || !selectedPost) return;
+    if (promptRealLoginIfDemo("參與留言討論")) return;
     try {
       await apiFetch('/forum.php?action=comment', {
         method: 'POST',

@@ -138,7 +138,7 @@ const DashboardView = ({ onNavigate }: { onNavigate: (symbol: string) => void })
 const getCurrentRoute = (pathname: string) => routeConfig.find(route => route.path === pathname) ?? routeConfig[0];
 
 function AppContent() {
-  const { session, loading, signOut } = useUser();
+  const { session, isDemo, loading, enterDemoMode, signOut } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
   const [showQRModal, setShowQRModal] = useState(false);
@@ -148,6 +148,12 @@ function AppContent() {
   const routeSymbol = searchParams.get("symbol") || "AAPL";
   const pageDescription = typeof currentRoute.description === "function" ? currentRoute.description(routeSymbol) : currentRoute.description;
   const currentUrl = `${siteUrl}${location.pathname}`;
+
+  useEffect(() => {
+    if (searchParams.get("demo") === "1" && !session) {
+      enterDemoMode();
+    }
+  }, [searchParams, session, enterDemoMode]);
 
   // Notification Queue (FIFO)
   const [notificationQueue, setNotificationQueue] = useState<{id: number, msg: string}[]>([]);
@@ -271,10 +277,16 @@ function AppContent() {
           ))}
           <button
             onClick={signOut}
-            className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors text-red-500 hover:bg-red-500/10"
+            className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
+              isDemo
+                ? 'text-emerald-400 hover:bg-emerald-500/10 border border-emerald-500/30'
+                : 'text-red-500 hover:bg-red-500/10'
+            }`}
           >
             <LogOut size={20} />
-            <span className="font-medium hidden md:block">Sign Out</span>
+            <span className="font-medium hidden md:block">
+              {isDemo ? 'Cloud Login / Sign Up' : 'Sign Out'}
+            </span>
           </button>
         </div>
       </nav>

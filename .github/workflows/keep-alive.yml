@@ -1,0 +1,30 @@
+name: Keep Supabase & QuantTrd API Alive
+
+on:
+  schedule:
+    # Runs every 3 days at 03:15 UTC so Supabase Free Tier never hits the 7-day pause limit
+    - cron: '15 3 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping QuantTrd Serverless Health Endpoint
+        run: |
+          echo "Pinging Vercel FastAPI Serverless Health Endpoint..."
+          curl -sS -i --max-time 25 "https://stock-website-ad6i.vercel.app/api/health" || true
+
+      - name: Ping Supabase REST API Gateway (Prevents 7-Day Pause)
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://pezwarnweoafcrxjbdoy.supabase.co' }}
+          SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlendhcm53ZW9hZmNyeGpiZG95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NDU5NDksImV4cCI6MjA5MjQyMTk0OX0.GgwZAlodNV9xkFM343x_vjqlHc-cRUsmDlQqvHY5yjI' }}
+        run: |
+          echo "Pinging Supabase PostgREST & Auth health endpoints..."
+          curl -sS -o /dev/null -w "Supabase Auth HTTP %{http_code}\n" --max-time 20 \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            "${SUPABASE_URL}/auth/v1/health" || true
+          curl -sS -o /dev/null -w "Supabase REST HTTP %{http_code}\n" --max-time 20 \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            "${SUPABASE_URL}/rest/v1/" || true

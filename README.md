@@ -1,5 +1,7 @@
 # QuantTrd - Institutional-Grade Financial Terminal / 機構級金融分析終端機
 
+🚀 **Live Demo (0.01s Instant Entry / 免註冊一鍵秒進展示):** [https://stock-website-ad6i.vercel.app/?demo=1](https://stock-website-ad6i.vercel.app/?demo=1)
+
 [English](#english) | [繁體中文](#繁體中文)
 
 ---
@@ -23,8 +25,8 @@ QuantTrd is a high-performance, modern web application designed for retail inves
 
 ### 🛠️ Technology Stack
 - **Frontend:** React 19 (TypeScript), Vite, Tailwind CSS, Framer Motion, Recharts
-- **Backend:** PHP 8.2 (Auth/DB), Python FastAPI (Quant Data)
-- **Cloud:** Supabase (PostgreSQL), Cloudinary (Images), Vercel (Frontend), Render (Backend)
+- **Serverless Backend (V2):** Python FastAPI on Vercel Serverless (`api/index.py`), JWT + Bcrypt Auth
+- **Database & High Availability:** Neon Serverless PostgreSQL (Primary, Singapore) + Supabase PostgreSQL Auto-Failover & GitHub Actions Keep-Alive *(Legacy V1 PHP coursework archived in `backend/`)*
 
 ---
 
@@ -47,8 +49,8 @@ QuantTrd 是一個專為散戶與專業投資人打造的高效能、現代化 W
 
 ### 🛠️ 技術堆疊 (Tech Stack)
 - **前端:** React 19 (TypeScript), Vite, Tailwind CSS, Framer Motion, Recharts
-- **後端:** PHP 8.2 (會員認證/資料庫交互), Python FastAPI (量化運算與爬蟲)
-- **雲端服務:** Supabase (PostgreSQL), Cloudinary (圖片託管), Vercel (前端部署), Render (Docker 後端部署)
+- **無伺服器後端 (V2):** Python FastAPI (Vercel Serverless 毫秒級認證、量化運算與財報樹拆解)
+- **雙雲高可用資料庫:** Neon Serverless PostgreSQL (新加坡主力庫・永不休眠) + Supabase PostgreSQL 自動故障轉移與 GitHub Actions 定時保活 *(V1 時期 PHP 8.2 作業原始碼完整封存於 `backend/`)*
 
 ### 📦 快速開始
 

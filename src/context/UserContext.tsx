@@ -1,5 +1,14 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import {
+  apiFetch,
+  getAuthToken,
+  setAuthToken,
+  removeAuthToken,
+  isDemoModeActive,
+  enableDemoModeStorage,
+  disableDemoModeStorage,
+} from '../lib/api';
 
 export type CurrencyType = 'USD' | 'EUR' | 'GBP';
 
@@ -34,77 +43,118 @@ export interface UserSettings {
     email: boolean;
     sms: boolean;
     push: boolean;
-  }
+  };
 }
 
 export interface UserContextType {
   profile: UserProfile;
   settings: UserSettings;
   session: any;
+  isDemo: boolean;
   loading: boolean;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   updateSettings: (data: Partial<UserSettings>) => Promise<void>;
   getCurrencySymbol: () => string;
+  enterDemoMode: () => void;
+  completeAuthSession: (token: string, user: { id: number; email: string }, serverProfile?: any) => void;
   signOut: () => Promise<void>;
 }
 
+const DEMO_PROFILE_STORAGE_KEY = 'quanttrd_demo_profile';
+
 const defaultProfile: UserProfile = {
-  name: "",
-  email: "guest@quanttrd.io",
-  phone: "+1 (555) 123-4567",
-  bank: "JPMorgan Chase",
-  wallet: "0x7a...9d8E",
+  name: 'Demo Quant Trader',
+  email: 'guest@quanttrd.io',
+  phone: '+1 (555) 123-4567',
+  bank: 'JPMorgan Chase',
+  wallet: '0x7a...9d8E',
+  bio: 'Exploring QuantTrd live multi-market analytics & backtesting.',
   stats: {
-    balance: 124562.00,
+    balance: 124562.0,
     profit: 12.5,
-    positions: 14
+    positions: 14,
   },
-  watchlist: ["AAPL", "TSLA", "MSFT", "NVDA", "BTC-USD"]
+  watchlist: ['NVDA', 'TSLA', 'AAPL', '2330.TW', 'BTC-USD'],
 };
 
 const defaultSettings: UserSettings = {
   currency: 'USD',
   theme: 'dark',
   security: { twoFactor: true },
-  billing: { plan: "Pro Tier", nextBilling: "May 1, 2026", cardLast4: "4242" },
-  notifications: { email: true, sms: false, push: true }
+  billing: { plan: 'Pro Tier', nextBilling: 'Dec 1, 2026', cardLast4: '4242' },
+  notifications: { email: true, sms: false, push: true },
+};
+
+const loadSavedDemoProfile = (): UserProfile => {
+  try {
+    const raw = localStorage.getItem(DEMO_PROFILE_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return { ...defaultProfile, ...parsed };
+    }
+  } catch {
+    // Ignore malformed local cache
+  }
+  return defaultProfile;
+};
+
+// Synchronously detect ?demo=1 in URL so HR / interviewers see the dashboard in 0.00ms without a spinner
+const detectInitialDemoEntry = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('demo') === '1') {
+    enableDemoModeStorage();
+    params.delete('demo');
+    const cleanQuery = params.toString();
+    const cleanUrl = `${window.location.pathname}${cleanQuery ? `?${cleanQuery}` : ''}${window.location.hash}`;
+    window.history.replaceState({}, '', cleanUrl);
+    return true;
+  }
+  return !getAuthToken() && isDemoModeActive();
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-import { apiFetch, getAuthToken, removeAuthToken } from '../lib/api';
-
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [profile, setProfile] = useState<UserProfile>(defaultProfile);
+  const initialDemo = detectInitialDemoEntry();
+
+  const [profile, setProfile] = useState<UserProfile>(() =>
+    initialDemo ? loadSavedDemoProfile() : defaultProfile
+  );
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
-  const [session, setSession] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [isDemo, setIsDemo] = useState<boolean>(initialDemo);
+  const [session, setSession] = useState<any>(() =>
+    initialDemo ? { user: { id: 0, email: defaultProfile.email }, isDemo: true } : null
+  );
+  const [loading, setLoading] = useState<boolean>(() => Boolean(getAuthToken()) && !initialDemo);
 
   useEffect(() => {
     const token = getAuthToken();
     if (token) {
-      loadUserDataFromPHP();
-    } else {
+      loadUserDataFromServer();
+    } else if (!initialDemo) {
       setLoading(false);
     }
   }, []);
 
-  const loadUserDataFromPHP = async () => {
+  const loadUserDataFromServer = async () => {
     try {
-      const data = await apiFetch('/profile.php');
+      const data = await apiFetch('/profile');
       if (data && data.email) {
-        setSession({ user: { email: data.email, id: data.id } });
+        disableDemoModeStorage();
+        setIsDemo(false);
+        setSession({ user: { email: data.email, id: data.id }, isDemo: false });
         setProfile(prev => ({
           ...prev,
           email: data.email,
-          name: data.name || "",
-          bio: data.bio || "",
-          stats: { ...prev.stats, balance: data.balance },
-          watchlist: data.watchlist || []
+          name: data.name || data.email.split('@')[0],
+          bio: data.bio || '',
+          stats: { ...prev.stats, balance: Number(data.balance ?? prev.stats.balance) },
+          watchlist: Array.isArray(data.watchlist) && data.watchlist.length > 0 ? data.watchlist : prev.watchlist,
         }));
       }
     } catch (err) {
-      console.error("Failed to load user profile from PHP", err);
+      console.error('Failed to load user profile from FastAPI', err);
       removeAuthToken();
       setSession(null);
     } finally {
@@ -112,19 +162,71 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const enterDemoMode = () => {
+    removeAuthToken();
+    enableDemoModeStorage();
+    const demoProf = loadSavedDemoProfile();
+    setProfile(demoProf);
+    setIsDemo(true);
+    setSession({ user: { id: 0, email: demoProf.email }, isDemo: true });
+    setLoading(false);
+  };
+
+  const completeAuthSession = (
+    token: string,
+    user: { id: number; email: string },
+    serverProfile?: any
+  ) => {
+    disableDemoModeStorage();
+    setAuthToken(token);
+    setIsDemo(false);
+    setSession({ user, isDemo: false });
+    if (serverProfile) {
+      setProfile(prev => ({
+        ...prev,
+        email: serverProfile.email || user.email,
+        name: serverProfile.name || user.email.split('@')[0],
+        bio: serverProfile.bio ?? prev.bio,
+        stats: {
+          ...prev.stats,
+          balance: Number(serverProfile.balance ?? prev.stats.balance),
+        },
+        watchlist:
+          Array.isArray(serverProfile.watchlist) && serverProfile.watchlist.length > 0
+            ? serverProfile.watchlist
+            : prev.watchlist,
+      }));
+    } else {
+      loadUserDataFromServer();
+    }
+  };
+
   const updateProfile = async (data: Partial<UserProfile>) => {
     const newProfile = { ...profile, ...data };
     setProfile(newProfile);
-    
-    // Update balance on the PHP backend if it changed
-    if (data.stats?.balance !== undefined) {
+
+    if (isDemo) {
       try {
-        await apiFetch('/profile.php', {
+        localStorage.setItem(DEMO_PROFILE_STORAGE_KEY, JSON.stringify(newProfile));
+      } catch {
+        // Ignore storage quota errors
+      }
+      return;
+    }
+
+    const payload: Record<string, any> = {};
+    if (data.stats?.balance !== undefined) payload.balance = data.stats.balance;
+    if (data.name !== undefined) payload.name = data.name;
+    if (data.bio !== undefined) payload.bio = data.bio;
+
+    if (Object.keys(payload).length > 0) {
+      try {
+        await apiFetch('/profile', {
           method: 'POST',
-          body: { balance: data.stats.balance }
+          body: payload,
         });
       } catch (err) {
-        console.error("Failed to update balance via API", err);
+        console.error('Failed to update profile via FastAPI', err);
       }
     }
   };
@@ -132,19 +234,24 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const updateSettings = async (data: Partial<UserSettings>) => {
     const newSettings = { ...settings, ...data };
     setSettings(newSettings);
-    // Not implemented in PHP backend yet
   };
 
   const signOut = async () => {
     removeAuthToken();
+    disableDemoModeStorage();
+    setIsDemo(false);
     setSession(null);
   };
 
   const getCurrencySymbol = () => {
     switch (settings.currency) {
-      case 'EUR': return '€';
-      case 'GBP': return '£';
-      case 'USD': default: return '$';
+      case 'EUR':
+        return '€';
+      case 'GBP':
+        return '£';
+      case 'USD':
+      default:
+        return '$';
     }
   };
 
@@ -157,7 +264,21 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   }, [settings.theme]);
 
   return (
-    <UserContext.Provider value={{ profile, settings, session, loading, updateProfile, updateSettings, getCurrencySymbol, signOut }}>
+    <UserContext.Provider
+      value={{
+        profile,
+        settings,
+        session,
+        isDemo,
+        loading,
+        updateProfile,
+        updateSettings,
+        getCurrencySymbol,
+        enterDemoMode,
+        completeAuthSession,
+        signOut,
+      }}
+    >
       {children}
     </UserContext.Provider>
   );

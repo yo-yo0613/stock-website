@@ -5,6 +5,10 @@
       "destination": "https://query1.finance.yahoo.com/:match*"
     },
     {
+      "source": "/api/:path*",
+      "destination": "/api/index.py"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

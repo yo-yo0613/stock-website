@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { apiFetch } from "../lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { BarChart2, Bell, Settings, User, Shield, CreditCard, Save, Edit2, Phone, Building, Wallet, CheckCircle2, Lock, Smartphone, Upload, MessageSquare } from "lucide-react";
 import { useUser } from "../context/UserContext";
@@ -482,10 +483,8 @@ export const NewsView = () => {
     setArticleLoading(true);
     setArticleHtml("");
     try {
-      // Use the PHP proxy to bypass CORS and extract the article body
-      const API_BASE = import.meta.env.VITE_PHP_API_URL || "http://localhost:8000/api";
-      const res = await fetch(`${API_BASE}/news_proxy.php?url=${encodeURIComponent(item.link)}`);
-      const data = await res.json();
+      // Use the unified FastAPI Serverless proxy to bypass CORS and extract the article body
+      const data = await apiFetch(`/news_proxy?url=${encodeURIComponent(item.link)}`);
       if (data.success) {
         setArticleHtml(data.content);
       } else {
